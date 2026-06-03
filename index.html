@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Камера → Telegram бот</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: system-ui, 'Segoe UI', sans-serif;
+            background: #0a0f1e;
+            color: #eef;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: #1e2a3a;
+            border-radius: 32px;
+            padding: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        h1 {
+            font-size: 1.6rem;
+            margin: 0 0 8px 0;
+        }
+        .sub {
+            color: #aac8e0;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+        .video-wrapper {
+            background: #000;
+            border-radius: 24px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            position: relative;
+            aspect-ratio: 4 / 3;
+        }
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1); /* зеркалим для удобства, как в зеркале */
+        }
+        .canvas-hidden {
+            display: none;
+        }
+        button {
+            background: #3b82f6;
+            border: none;
+            color: white;
+            font-weight: bold;
+            padding: 12px 24px;
+            border-radius: 60px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin: 8px 6px;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        button:active {
+            transform: scale(0.97);
+        }
+        button:disabled {
+            background: #4b5563;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-danger {
+            background: #dc2626;
+        }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #3b82f6;
+            color: #3b82f6;
+        }
+        .preview {
+            margin: 20px 0;
+            padding: 12px;
+            background: #0f172a;
+            border-radius: 24px;
+        }
+        .preview img {
+            max-width: 100%;
+            border-radius: 16px;
+            border: 2px solid #3b82f6;
+            background: #000;
+        }
+        .status {
+            margin-top: 16px;
+            font-size: 0.85rem;
+            background: #0f172a80;
+            border-radius: 40px;
+            padding: 8px 12px;
+            word-break: break-word;
+        }
+        .flex-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+        footer {
+            margin-top: 20px;
+            font-size: 0.7rem;
+            color: #7c8ea0;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>📸 Фото → Telegram бот</h1>
+    <div class="sub">Передняя камера</div>
+
+    <div class="video-wrapper">
+        <video id="video" autoplay playsinline muted></video>
+    </div>
+
+    <div class="flex-buttons">
+        <button id="startCameraBtn">🎥 Запросить камеру</button>
+        <button id="snapBtn" disabled>📷 Сделать фото</button>
+        <button id="sendBtn" disabled>📨 Отправить фото в бот</button>
+    </div>
+
+    <div id="previewArea" class="preview" style="display: none;">
+        <strong>Снимок:</strong><br>
+        <img id="previewImg" alt="preview">
+    </div>
+
+    <div id="status" class="status">💡 Нажмите «Запросить камеру»</div>
+    <footer>Фото отправляется напрямую в Telegram (токен виден в коде). Для защиты используйте прокси-сервер.</footer>
+</div>
+
+<canvas id="canvas" class="canvas-hidden"></canvas>
+
+<script>
+    // ========== НАСТРОЙКИ БОТА ==========
+    const BOT_TOKEN = '8595875715:AAGNWXSU1uR_29Hli6vGAyzI5juAI3-OHmA';
+    const CHAT_ID = '5305261101';
+
+    // ========== DOM элементы ==========
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const previewImg = document.getElementById('previewImg');
+    const previewArea = document.getElementById('previewArea');
+    const statusDiv = document.getElementById('status');
+    const startBtn = document.getElementById('startCameraBtn');
+    const snapBtn = document.getElementById('snapBtn');
+    const sendBtn = document.getElementById('sendBtn');
+
+    let stream = null;           // видеопоток
+    let currentPhotoBlob = null; // blob последнего снимка
+
+    // Утилита для вывода статуса
+    function setStatus(msg, isError = false) {
+        statusDiv.innerHTML = isError ? `❌ ${msg}` : `🔵 ${msg}`;
+        statusDiv.style.color = isError ? '#ffb4a2' : '#eef';
+        console.log(msg);
+    }
+
+    // Освобождение камеры
+    function stopCamera() {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            stream = null;
+        }
+        video.srcObject = null;
+    }
+
+    // Запрос доступа к передней камере
+    async function startCamera() {
+        stopCamera();
+        setStatus('Запрос разрешения на камеру...');
+        try {
+            // facingMode: "user" — передняя камера
+            stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: { exact: "user" } }
+            });
+            video.srcObject = stream;
+            setStatus('✅ Камера работает. Можно делать фото.');
+            snapBtn.disabled = false;
+            sendBtn.disabled = true;  // пока нет фото
+        } catch (err) {
+            console.error(err);
+            let errorMsg = 'Не удалось получить доступ к передней камере. ';
+            if (err.name === 'OverconstrainedError') {
+                errorMsg += 'Передняя камера не найдена. Попробуйте "user" (фронтальная).';
+                // fallback: попробуем любую камеру
+                try {
+                    setStatus('Передняя камера недоступна, пробуем любую камеру...', true);
+                    const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    stream = fallbackStream;
+                    video.srcObject = stream;
+                    setStatus('⚠️ Используется камера по умолчанию (возможно, задняя).', false);
+                    snapBtn.disabled = false;
+                } catch (fallbackErr) {
+                    setStatus('Ошибка: ' + fallbackErr.message, true);
+                }
+            } else if (err.name === 'NotAllowedError') {
+                errorMsg += 'Вы не разрешили доступ к камере. Обновите страницу и разрешите.';
+                setStatus(errorMsg, true);
+            } else if (err.name === 'NotFoundError') {
+                errorMsg += 'На устройстве нет камеры.';
+                setStatus(errorMsg, true);
+            } else {
+                setStatus('Ошибка: ' + err.message, true);
+            }
+            snapBtn.disabled = true;
+            sendBtn.disabled = true;
+        }
+    }
+
+    // Сделать фото
+    function takePhoto() {
+        if (!video.srcObject || !stream) {
+            setStatus('Сначала включите камеру', true);
+            return;
+        }
+
+        const width = video.videoWidth;
+        const height = video.videoHeight;
+
+        if (width === 0 || height === 0) {
+            setStatus('Видеопоток ещё не готов, подождите секунду', true);
+            return;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+
+        // Чтобы фото было как в зеркале
+        ctx.save();
+        ctx.scale(-1, 1);
+        ctx.drawImage(video, -width, 0, width, height);
+        ctx.restore();
+
+        canvas.toBlob((blob) => {
+            if (!blob) {
+                setStatus('Ошибка при создании фото', true);
+                return;
+            }
+
+            currentPhotoBlob = blob;
+
+            const url = URL.createObjectURL(blob);
+            previewImg.src = url;
+            previewArea.style.display = 'block';
+
+            setStatus('Фото готово! Нажмите "Отправить в бот".');
+            sendBtn.disabled = false;
+        }, 'image/jpeg', 0.85);
+    }
+
+    // Отправка фото в Telegram бот
+    async function sendPhotoToBot() {
+        if (!currentPhotoBlob) {
+            setStatus('Нет фото. Сначала сделайте снимок.', true);
+            return;
+        }
+
+        if (!BOT_TOKEN || !CHAT_ID) {
+            setStatus('❌ Не заданы токен бота или chat_id.', true);
+            return;
+        }
+
+        setStatus('📤 Отправка фото в Telegram...');
+        sendBtn.disabled = true;
+
+        const formData = new FormData();
+        formData.append('chat_id', CHAT_ID);
+        formData.append('photo', currentPhotoBlob, 'camera_photo.jpg');
+
+        try {
+            const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (result.ok) {
+                setStatus('✅ Фото успешно отправлено в Telegram!');
+            } else {
+                console.error('Telegram API error:', result);
+                setStatus(`Ошибка Telegram: ${result.description || 'неизвестная ошибка'}`, true);
+                sendBtn.disabled = false;
+            }
+        } catch (err) {
+            console.error(err);
+            setStatus(`Сетевая ошибка: ${err.message}`, true);
+            sendBtn.disabled = false;
+        }
+    }
+
+    // Привязка событий
+    startBtn.addEventListener('click', startCamera);
+    snapBtn.addEventListener('click', takePhoto);
+    sendBtn.addEventListener('click', sendPhotoToBot);
+
+    // Если страница закрывается, останавливаем камеру
+    window.addEventListener('beforeunload', () => {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+    });
+</script>
+</body>
+</html>
